@@ -902,10 +902,6 @@
             draw();
         }
 
-        // Load saved theme
-        const savedTheme = localStorage.getItem('wallCalcTheme') || 'serious';
-        setTheme(savedTheme);
-
         // Canvas and controls setup
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
@@ -1385,6 +1381,10 @@
             canvas.height = 400;
             draw();
         }
+
+        // Load saved theme (must be after all DOM elements are defined)
+        const savedTheme = localStorage.getItem('wallCalcTheme') || 'serious';
+        setTheme(savedTheme);
 
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
