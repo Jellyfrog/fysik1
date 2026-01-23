@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vägg Egentyngd Kalkylator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #4fc3f7;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4fc3f7;
+            font-weight: 500;
+        }
+
+        .control-group .unit {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(79,195,247,0.5);
+        }
+
+        .value-display {
+            min-width: 70px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #fff;
+        }
+
+        .visualization {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .viz-title {
+            color: #4fc3f7;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        canvas {
+            background: #0d1421;
+            border-radius: 10px;
+            width: 100%;
+        }
+
+        .results {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .results h3 {
+            color: #4fc3f7;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(79,195,247,0.3);
+            padding-bottom: 10px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #aaa;
+        }
+
+        .result-value {
+            font-family: 'Courier New', monospace;
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+
+        .result-value.total {
+            color: #81c784;
+            font-size: 1.2em;
+        }
+
+        .formula-box {
+            background: rgba(79,195,247,0.1);
+            border: 1px solid rgba(79,195,247,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+
+        .formula-box .highlight {
+            color: #81c784;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .wood-color { background: #8d6e63; }
+        .insulation-color { background: #ffb74d; }
+
+        .section-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 20px 0;
+        }
+
+        .view-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab-btn.active {
+            background: rgba(79,195,247,0.2);
+            border-color: #4fc3f7;
+            color: #4fc3f7;
+        }
+
+        .comparison-chart {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar {
+            width: 60px;
+            border-radius: 5px 5px 0 0;
+            transition: height 0.5s ease;
+        }
+
+        .bar-wood {
+            background: linear-gradient(180deg, #a1887f 0%, #8d6e63 100%);
+        }
+
+        .bar-insulation {
+            background: linear-gradient(180deg, #ffd54f 0%, #ffb74d 100%);
+        }
+
+        .bar-total {
+            background: linear-gradient(180deg, #81c784 0%, #66bb6a 100%);
+        }
+
+        .bar-label {
+            font-size: 0.8em;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .bar-value {
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vägg Egentyngd Kalkylator</h1>
+        <p class="subtitle">Beräkna egentyngd för väggkonstruktion med träreglar och isolering</p>
+
+        <div class="main-content">
+            <div class="controls">
+                <h3 style="color: #4fc3f7; margin-bottom: 20px;">Materialegenskaper</h3>
+
+                <div class="control-group">
+                    <label>Densitet trä (γ<sub>trä</sub>) <span class="unit">[kN/m³]</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="woodDensity" min="3" max="8" step="0.1" value="5">
+                        <span class="value-display" id="woodDensityValue">5.0</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Densitet isolering (γ<sub>iso</sub>) <span class="unit">[kN/m³]</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="insulationDensity" min="0.1" max="1.0" step="0.05" value="0.3">
+                        <span class="value-display" id="insulationDensityValue">0.30</span>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <h3 style="color: #4fc3f7; margin-bottom: 20px;">Geometri</h3>
+
+                <div class="control-group">
+                    <label>Regelbredd <span class="unit">[mm]</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="studWidth" min="30" max="70" step="5" value="45">
+                        <span class="value-display" id="studWidthValue">45</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Centrumavstånd (c/c) <span class="unit">[mm]</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="studSpacing" min="300" max="900" step="50" value="600">
+                        <span class="value-display" id="studSpacingValue">600</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Väggtjocklek <span class="unit">[mm]</span></label>
+                    <div class="slider-container">
+                        <input type="range" id="wallThickness" min="70" max="300" step="10" value="140">
+                        <span class="value-display" id="wallThicknessValue">140</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Antal fack att visa</label>
+                    <div class="slider-container">
+                        <input type="range" id="numBays" min="1" max="5" step="1" value="3">
+                        <span class="value-display" id="numBaysValue">3</span>
+                    </div>
+                </div>
+
+                <div class="results">
+                    <h3>Beräkningsresultat</h3>
+
+                    <div class="result-row">
+                        <span class="result-label">Andel trä:</span>
+                        <span class="result-value" id="woodFraction">0.075</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Andel isolering:</span>
+                        <span class="result-value" id="insulationFraction">0.925</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">G<sub>k,trä</sub>:</span>
+                        <span class="result-value" id="woodWeight">0.053 kN/m²</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">G<sub>k,iso</sub>:</span>
+                        <span class="result-value" id="insulationWeight">0.039 kN/m²</span>
+                    </div>
+                    <div class="result-row" style="margin-top: 10px; padding-top: 15px; border-top: 2px solid rgba(79,195,247,0.3);">
+                        <span class="result-label" style="font-size: 1.1em;">G<sub>k,total</sub>:</span>
+                        <span class="result-value total" id="totalWeight">0.092 kN/m²</span>
+                    </div>
+
+                    <div class="formula-box">
+                        <div>G<sub>k</sub> = γ<sub>trä</sub> · t · A<sub>trä</sub> + γ<sub>iso</sub> · t · A<sub>iso</sub></div>
+                        <div style="margin-top: 8px;" id="formulaExpanded"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="view-tabs">
+                    <button class="tab-btn active" data-view="cross">Tvärsnitt</button>
+                    <button class="tab-btn" data-view="front">Framifrån</button>
+                    <button class="tab-btn" data-view="3d">3D-vy</button>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="800" height="400"></canvas>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color wood-color"></div>
+                        <span>Trä (reglar)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color insulation-color"></div>
+                        <span>Isolering</span>
+                    </div>
+                </div>
+
+                <div class="comparison-chart">
+                    <div class="bar-container">
+                        <div class="bar-value" id="barWoodValue">0.053</div>
+                        <div class="bar bar-wood" id="barWood" style="height: 50px;"></div>
+                        <div class="bar-label">Trä<br>bidrag</div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-value" id="barInsulationValue">0.039</div>
+                        <div class="bar bar-insulation" id="barInsulation" style="height: 40px;"></div>
+                        <div class="bar-label">Isolering<br>bidrag</div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-value" id="barTotalValue">0.092</div>
+                        <div class="bar bar-total" id="barTotal" style="height: 90px;"></div>
+                        <div class="bar-label">Total<br>egentyngd</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Input elements
+        const inputs = {
+            woodDensity: document.getElementById('woodDensity'),
+            insulationDensity: document.getElementById('insulationDensity'),
+            studWidth: document.getElementById('studWidth'),
+            studSpacing: document.getElementById('studSpacing'),
+            wallThickness: document.getElementById('wallThickness'),
+            numBays: document.getElementById('numBays')
+        };
+
+        // Display elements
+        const displays = {
+            woodDensityValue: document.getElementById('woodDensityValue'),
+            insulationDensityValue: document.getElementById('insulationDensityValue'),
+            studWidthValue: document.getElementById('studWidthValue'),
+            studSpacingValue: document.getElementById('studSpacingValue'),
+            wallThicknessValue: document.getElementById('wallThicknessValue'),
+            numBaysValue: document.getElementById('numBaysValue'),
+            woodFraction: document.getElementById('woodFraction'),
+            insulationFraction: document.getElementById('insulationFraction'),
+            woodWeight: document.getElementById('woodWeight'),
+            insulationWeight: document.getElementById('insulationWeight'),
+            totalWeight: document.getElementById('totalWeight'),
+            formulaExpanded: document.getElementById('formulaExpanded')
+        };
+
+        let currentView = 'cross';
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentView = btn.dataset.view;
+                draw();
+            });
+        });
+
+        // Update function
+        function update() {
+            const woodDensity = parseFloat(inputs.woodDensity.value);
+            const insulationDensity = parseFloat(inputs.insulationDensity.value);
+            const studWidth = parseFloat(inputs.studWidth.value) / 1000; // Convert to meters
+            const studSpacing = parseFloat(inputs.studSpacing.value) / 1000;
+            const wallThickness = parseFloat(inputs.wallThickness.value) / 1000;
+            const numBays = parseInt(inputs.numBays.value);
+
+            // Update display values
+            displays.woodDensityValue.textContent = woodDensity.toFixed(1);
+            displays.insulationDensityValue.textContent = insulationDensity.toFixed(2);
+            displays.studWidthValue.textContent = (studWidth * 1000).toFixed(0);
+            displays.studSpacingValue.textContent = (studSpacing * 1000).toFixed(0);
+            displays.wallThicknessValue.textContent = (wallThickness * 1000).toFixed(0);
+            displays.numBaysValue.textContent = numBays;
+
+            // Calculate fractions
+            const woodFraction = studWidth / studSpacing;
+            const insulationFraction = 1 - woodFraction;
+
+            // Calculate weights (kN/m²)
+            const woodWeight = woodDensity * wallThickness * woodFraction;
+            const insulationWeight = insulationDensity * wallThickness * insulationFraction;
+            const totalWeight = woodWeight + insulationWeight;
+
+            // Update results
+            displays.woodFraction.textContent = woodFraction.toFixed(3);
+            displays.insulationFraction.textContent = insulationFraction.toFixed(3);
+            displays.woodWeight.textContent = woodWeight.toFixed(4) + ' kN/m²';
+            displays.insulationWeight.textContent = insulationWeight.toFixed(4) + ' kN/m²';
+            displays.totalWeight.textContent = totalWeight.toFixed(4) + ' kN/m²';
+
+            // Update formula
+            displays.formulaExpanded.innerHTML =
+                `<span class="highlight">G<sub>k</sub> = ${woodDensity.toFixed(1)} · ${wallThickness.toFixed(3)} · ${woodFraction.toFixed(3)} + ${insulationDensity.toFixed(2)} · ${wallThickness.toFixed(3)} · ${insulationFraction.toFixed(3)}</span><br>` +
+                `<span class="highlight">G<sub>k</sub> = ${totalWeight.toFixed(4)} kN/m²</span>`;
+
+            // Update bars
+            const maxHeight = 150;
+            const maxWeight = Math.max(totalWeight * 1.2, 0.2);
+
+            document.getElementById('barWood').style.height = (woodWeight / maxWeight * maxHeight) + 'px';
+            document.getElementById('barInsulation').style.height = (insulationWeight / maxWeight * maxHeight) + 'px';
+            document.getElementById('barTotal').style.height = (totalWeight / maxWeight * maxHeight) + 'px';
+
+            document.getElementById('barWoodValue').textContent = woodWeight.toFixed(3);
+            document.getElementById('barInsulationValue').textContent = insulationWeight.toFixed(3);
+            document.getElementById('barTotalValue').textContent = totalWeight.toFixed(3);
+
+            draw();
+        }
+
+        function draw() {
+            const studWidth = parseFloat(inputs.studWidth.value);
+            const studSpacing = parseFloat(inputs.studSpacing.value);
+            const wallThickness = parseFloat(inputs.wallThickness.value);
+            const numBays = parseInt(inputs.numBays.value);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentView === 'cross') {
+                drawCrossSection(studWidth, studSpacing, wallThickness, numBays);
+            } else if (currentView === 'front') {
+                drawFrontView(studWidth, studSpacing, wallThickness, numBays);
+            } else {
+                draw3DView(studWidth, studSpacing, wallThickness, numBays);
+            }
+        }
+
+        function drawCrossSection(studWidth, studSpacing, wallThickness, numBays) {
+            const totalWidth = studSpacing * numBays + studWidth;
+            const scale = Math.min((canvas.width - 100) / totalWidth, (canvas.height - 120) / wallThickness);
+
+            const startX = (canvas.width - totalWidth * scale) / 2;
+            const startY = (canvas.height - wallThickness * scale) / 2;
+
+            // Draw title
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = '16px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('Tvärsnitt (ovanifrån)', canvas.width / 2, 25);
+
+            // Draw wall sections
+            for (let i = 0; i <= numBays; i++) {
+                const studX = startX + i * studSpacing * scale;
+
+                // Draw insulation (before stud, except first)
+                if (i > 0) {
+                    const insX = startX + (i - 1) * studSpacing * scale + studWidth * scale;
+                    const insWidth = (studSpacing - studWidth) * scale;
+
+                    // Insulation pattern
+                    ctx.fillStyle = '#ffb74d';
+                    ctx.fillRect(insX, startY, insWidth, wallThickness * scale);
+
+                    // Wavy pattern for insulation
+                    ctx.strokeStyle = '#ff9800';
+                    ctx.lineWidth = 1;
+                    for (let y = startY + 10; y < startY + wallThickness * scale; y += 15) {
+                        ctx.beginPath();
+                        ctx.moveTo(insX, y);
+                        for (let x = insX; x < insX + insWidth; x += 10) {
+                            ctx.lineTo(x + 5, y + 3 * Math.sin((x - insX) / 10));
+                        }
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw stud
+                ctx.fillStyle = '#8d6e63';
+                ctx.fillRect(studX, startY, studWidth * scale, wallThickness * scale);
+
+                // Wood grain pattern
+                ctx.strokeStyle = '#6d4c41';
+                ctx.lineWidth = 1;
+                for (let y = startY + 5; y < startY + wallThickness * scale; y += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(studX + 2, y);
+                    ctx.lineTo(studX + studWidth * scale - 2, y);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw dimensions
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.fillStyle = '#4fc3f7';
+            ctx.lineWidth = 1;
+            ctx.font = '12px Segoe UI';
+
+            // Stud width dimension
+            const dimY1 = startY - 25;
+            ctx.beginPath();
+            ctx.moveTo(startX, dimY1);
+            ctx.lineTo(startX, dimY1 + 10);
+            ctx.moveTo(startX, dimY1 + 5);
+            ctx.lineTo(startX + studWidth * scale, dimY1 + 5);
+            ctx.moveTo(startX + studWidth * scale, dimY1);
+            ctx.lineTo(startX + studWidth * scale, dimY1 + 10);
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.fillText(studWidth + ' mm', startX + studWidth * scale / 2, dimY1 - 5);
+
+            // Spacing dimension
+            const dimY2 = startY - 50;
+            ctx.beginPath();
+            ctx.moveTo(startX, dimY2);
+            ctx.lineTo(startX, dimY2 + 10);
+            ctx.moveTo(startX, dimY2 + 5);
+            ctx.lineTo(startX + studSpacing * scale, dimY2 + 5);
+            ctx.moveTo(startX + studSpacing * scale, dimY2);
+            ctx.lineTo(startX + studSpacing * scale, dimY2 + 10);
+            ctx.stroke();
+            ctx.fillText('c/c ' + studSpacing + ' mm', startX + studSpacing * scale / 2, dimY2 - 5);
+
+            // Thickness dimension
+            const dimX = startX + totalWidth * scale + 20;
+            ctx.beginPath();
+            ctx.moveTo(dimX, startY);
+            ctx.lineTo(dimX + 10, startY);
+            ctx.moveTo(dimX + 5, startY);
+            ctx.lineTo(dimX + 5, startY + wallThickness * scale);
+            ctx.moveTo(dimX, startY + wallThickness * scale);
+            ctx.lineTo(dimX + 10, startY + wallThickness * scale);
+            ctx.stroke();
+            ctx.save();
+            ctx.translate(dimX + 25, startY + wallThickness * scale / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(wallThickness + ' mm', 0, 0);
+            ctx.restore();
+        }
+
+        function drawFrontView(studWidth, studSpacing, wallThickness, numBays) {
+            const wallHeight = 300;
+            const totalWidth = studSpacing * numBays + studWidth;
+            const scale = Math.min((canvas.width - 100) / totalWidth, (canvas.height - 80) / wallHeight);
+
+            const startX = (canvas.width - totalWidth * scale) / 2;
+            const startY = (canvas.height - wallHeight * scale) / 2;
+
+            // Draw title
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = '16px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('Framifrån (elevation)', canvas.width / 2, 25);
+
+            // Draw wall sections
+            for (let i = 0; i <= numBays; i++) {
+                const studX = startX + i * studSpacing * scale;
+
+                // Draw insulation (before stud, except first)
+                if (i > 0) {
+                    const insX = startX + (i - 1) * studSpacing * scale + studWidth * scale;
+                    const insWidth = (studSpacing - studWidth) * scale;
+
+                    ctx.fillStyle = '#ffb74d';
+                    ctx.fillRect(insX, startY, insWidth, wallHeight * scale);
+
+                    // Diagonal pattern for insulation
+                    ctx.strokeStyle = '#ff9800';
+                    ctx.lineWidth = 1;
+                    for (let d = -wallHeight * scale; d < insWidth; d += 20) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.max(insX, insX + d), Math.max(startY, startY - d));
+                        ctx.lineTo(Math.min(insX + insWidth, insX + d + wallHeight * scale),
+                                   Math.min(startY + wallHeight * scale, startY + wallHeight * scale - d));
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw stud
+                ctx.fillStyle = '#8d6e63';
+                ctx.fillRect(studX, startY, studWidth * scale, wallHeight * scale);
+
+                // Wood grain pattern (vertical)
+                ctx.strokeStyle = '#6d4c41';
+                ctx.lineWidth = 1;
+                for (let x = studX + 3; x < studX + studWidth * scale; x += 6) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, startY + 5);
+                    ctx.lineTo(x, startY + wallHeight * scale - 5);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw top and bottom plates
+            ctx.fillStyle = '#a1887f';
+            ctx.fillRect(startX, startY - 15, totalWidth * scale, 15);
+            ctx.fillRect(startX, startY + wallHeight * scale, totalWidth * scale, 15);
+
+            // Dimensions
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = '12px Segoe UI';
+
+            const dimY = startY + wallHeight * scale + 40;
+            ctx.beginPath();
+            ctx.moveTo(startX, dimY);
+            ctx.lineTo(startX, dimY + 10);
+            ctx.moveTo(startX, dimY + 5);
+            ctx.lineTo(startX + studSpacing * scale, dimY + 5);
+            ctx.moveTo(startX + studSpacing * scale, dimY);
+            ctx.lineTo(startX + studSpacing * scale, dimY + 10);
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.fillText('c/c ' + studSpacing + ' mm', startX + studSpacing * scale / 2, dimY + 25);
+        }
+
+        function draw3DView(studWidth, studSpacing, wallThickness, numBays) {
+            const wallHeight = 200;
+            const depth = wallThickness;
+            const totalWidth = studSpacing * numBays + studWidth;
+
+            const scale = Math.min((canvas.width - 150) / (totalWidth + depth * 0.5),
+                                   (canvas.height - 100) / (wallHeight + depth * 0.5));
+
+            const startX = 80;
+            const startY = 60;
+
+            const isoX = 0.7;
+            const isoY = 0.4;
+
+            // Draw title
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = '16px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('3D Isometrisk vy', canvas.width / 2, 25);
+
+            function toIso(x, y, z) {
+                return {
+                    x: startX + (x + z * isoX) * scale,
+                    y: startY + (wallHeight - y + z * isoY) * scale
+                };
+            }
+
+            // Draw from back to front
+            for (let i = numBays; i >= 0; i--) {
+                const studXPos = i * studSpacing;
+
+                // Draw insulation (between studs)
+                if (i < numBays) {
+                    const insX = studXPos + studWidth;
+                    const insWidth = studSpacing - studWidth;
+
+                    // Back face
+                    ctx.fillStyle = '#e6a23c';
+                    ctx.beginPath();
+                    let p = toIso(insX, 0, depth);
+                    ctx.moveTo(p.x, p.y);
+                    p = toIso(insX + insWidth, 0, depth);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX + insWidth, wallHeight, depth);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX, wallHeight, depth);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Top face
+                    ctx.fillStyle = '#ffc966';
+                    ctx.beginPath();
+                    p = toIso(insX, wallHeight, 0);
+                    ctx.moveTo(p.x, p.y);
+                    p = toIso(insX + insWidth, wallHeight, 0);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX + insWidth, wallHeight, depth);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX, wallHeight, depth);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Front face
+                    ctx.fillStyle = '#ffb74d';
+                    ctx.beginPath();
+                    p = toIso(insX, 0, 0);
+                    ctx.moveTo(p.x, p.y);
+                    p = toIso(insX + insWidth, 0, 0);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX + insWidth, wallHeight, 0);
+                    ctx.lineTo(p.x, p.y);
+                    p = toIso(insX, wallHeight, 0);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Draw stud
+                // Back face
+                ctx.fillStyle = '#6d4c41';
+                ctx.beginPath();
+                let p = toIso(studXPos, 0, depth);
+                ctx.moveTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, 0, depth);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, depth);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos, wallHeight, depth);
+                ctx.lineTo(p.x, p.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Right face
+                ctx.fillStyle = '#7d5a4a';
+                ctx.beginPath();
+                p = toIso(studXPos + studWidth, 0, 0);
+                ctx.moveTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, 0, depth);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, depth);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, 0);
+                ctx.lineTo(p.x, p.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Top face
+                ctx.fillStyle = '#a1887f';
+                ctx.beginPath();
+                p = toIso(studXPos, wallHeight, 0);
+                ctx.moveTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, 0);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, depth);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos, wallHeight, depth);
+                ctx.lineTo(p.x, p.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Front face
+                ctx.fillStyle = '#8d6e63';
+                ctx.beginPath();
+                p = toIso(studXPos, 0, 0);
+                ctx.moveTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, 0, 0);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos + studWidth, wallHeight, 0);
+                ctx.lineTo(p.x, p.y);
+                p = toIso(studXPos, wallHeight, 0);
+                ctx.lineTo(p.x, p.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Wood grain on front
+                ctx.strokeStyle = '#6d4c41';
+                ctx.lineWidth = 1;
+                for (let y = 10; y < wallHeight; y += 15) {
+                    ctx.beginPath();
+                    p = toIso(studXPos + 3, y, 0);
+                    ctx.moveTo(p.x, p.y);
+                    p = toIso(studXPos + studWidth - 3, y, 0);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw dimension labels
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = '11px Segoe UI';
+
+            // Width dimension
+            let p1 = toIso(0, -30, 0);
+            let p2 = toIso(studSpacing, -30, 0);
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.fillText('c/c ' + studSpacing + ' mm', (p1.x + p2.x) / 2, (p1.y + p2.y) / 2 - 8);
+
+            // Depth dimension
+            p1 = toIso(totalWidth + 20, 0, 0);
+            p2 = toIso(totalWidth + 20, 0, depth);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.fillText(wallThickness + ' mm', (p1.x + p2.x) / 2 + 30, (p1.y + p2.y) / 2);
+        }
+
+        // Add event listeners
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', update);
+        });
+
+        // Handle canvas resize
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = 400;
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Initial update
+        update();
+    </script>
+</body>
+</html>
