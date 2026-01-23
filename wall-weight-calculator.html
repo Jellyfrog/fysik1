@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vägg Egentyngd Kalkylator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -12,28 +13,52 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #ffeef8 0%, #f8e1f4 30%, #e8d5f9 70%, #dcd0ff 100%);
             min-height: 100vh;
-            color: #eee;
+            color: #5a4a6a;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Sparkles */
+        .sparkle {
+            position: fixed;
+            pointer-events: none;
+            animation: sparkle-float 3s ease-in-out infinite;
+        }
+
+        @keyframes sparkle-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 10px;
-            color: #4fc3f7;
+            color: #d4699e;
+            font-family: 'Pacifico', cursive;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(212, 105, 158, 0.3);
+        }
+
+        h1::before, h1::after {
+            content: ' ';
         }
 
         .subtitle {
             text-align: center;
-            color: #888;
+            color: #9b7aa9;
             margin-bottom: 30px;
+            font-weight: 500;
         }
 
         .main-content {
@@ -49,10 +74,11 @@
         }
 
         .controls {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,240,250,0.9) 100%);
+            border-radius: 25px;
             padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 3px solid #f5c6e0;
+            box-shadow: 0 10px 40px rgba(212, 105, 158, 0.2), inset 0 1px 0 rgba(255,255,255,0.8);
         }
 
         .control-group {
@@ -62,12 +88,12 @@
         .control-group label {
             display: block;
             margin-bottom: 8px;
-            color: #4fc3f7;
-            font-weight: 500;
+            color: #c46a9e;
+            font-weight: 600;
         }
 
         .control-group .unit {
-            color: #888;
+            color: #b89ac4;
             font-size: 0.9em;
         }
 
@@ -79,40 +105,44 @@
 
         input[type="range"] {
             flex: 1;
-            height: 8px;
-            border-radius: 4px;
-            background: #333;
+            height: 10px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #ffd6eb 0%, #e8c6f5 100%);
             outline: none;
             -webkit-appearance: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            background: #4fc3f7;
+            background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%);
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(79,195,247,0.5);
+            box-shadow: 0 4px 15px rgba(212, 105, 158, 0.4);
+            border: 3px solid #fff;
         }
 
         .value-display {
             min-width: 70px;
             text-align: right;
-            font-family: 'Courier New', monospace;
+            font-family: 'Quicksand', sans-serif;
             font-size: 1.1em;
-            color: #fff;
+            color: #8b6a9e;
+            font-weight: 600;
         }
 
         .visualization {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,240,255,0.9) 100%);
+            border-radius: 25px;
             padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 3px solid #e0c6f5;
+            box-shadow: 0 10px 40px rgba(180, 130, 200, 0.2), inset 0 1px 0 rgba(255,255,255,0.8);
         }
 
         .viz-title {
-            color: #4fc3f7;
+            color: #c46a9e;
             margin-bottom: 15px;
             font-size: 1.2em;
         }
@@ -124,30 +154,34 @@
         }
 
         canvas {
-            background: #0d1421;
-            border-radius: 10px;
+            background: linear-gradient(180deg, #fff5fa 0%, #f8f0ff 100%);
+            border-radius: 20px;
             width: 100%;
+            border: 2px solid #f0d6eb;
         }
 
         .results {
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
+            background: linear-gradient(145deg, #fff0f7 0%, #f8e8ff 100%);
+            border-radius: 20px;
             padding: 20px;
             margin-top: 20px;
+            border: 2px solid #f5d0e8;
         }
 
         .results h3 {
-            color: #4fc3f7;
+            color: #c46a9e;
             margin-bottom: 15px;
-            border-bottom: 1px solid rgba(79,195,247,0.3);
+            border-bottom: 2px dashed #f5c6e0;
             padding-bottom: 10px;
+            font-family: 'Pacifico', cursive;
+            font-size: 1.3em;
         }
 
         .result-row {
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px dashed #f0d6eb;
         }
 
         .result-row:last-child {
@@ -155,33 +189,34 @@
         }
 
         .result-label {
-            color: #aaa;
+            color: #9b7aa9;
         }
 
         .result-value {
-            font-family: 'Courier New', monospace;
-            color: #4fc3f7;
-            font-weight: bold;
+            font-family: 'Quicksand', sans-serif;
+            color: #c46a9e;
+            font-weight: 700;
         }
 
         .result-value.total {
-            color: #81c784;
+            color: #9b59b6;
             font-size: 1.2em;
         }
 
         .formula-box {
-            background: rgba(79,195,247,0.1);
-            border: 1px solid rgba(79,195,247,0.3);
-            border-radius: 8px;
+            background: linear-gradient(145deg, #fff5fa 0%, #f0e8ff 100%);
+            border: 2px dashed #dbb8e8;
+            border-radius: 15px;
             padding: 15px;
             margin-top: 15px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Quicksand', sans-serif;
             font-size: 0.9em;
             line-height: 1.8;
         }
 
         .formula-box .highlight {
-            color: #81c784;
+            color: #9b59b6;
+            font-weight: 700;
         }
 
         .legend {
@@ -195,20 +230,26 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            background: rgba(255,255,255,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #f5d0e8;
         }
 
         .legend-color {
             width: 20px;
             height: 20px;
-            border-radius: 4px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .wood-color { background: #8d6e63; }
-        .insulation-color { background: #ffb74d; }
+        .wood-color { background: linear-gradient(145deg, #dda0b8 0%, #c48a9f 100%); }
+        .insulation-color { background: linear-gradient(145deg, #f5d0e8 0%, #e8b8d8 100%); }
 
         .section-divider {
-            height: 1px;
-            background: rgba(255,255,255,0.1);
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #f5c6e0 50%, transparent 100%);
             margin: 20px 0;
         }
 
@@ -219,23 +260,27 @@
         }
 
         .tab-btn {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: #aaa;
+            padding: 12px 24px;
+            background: linear-gradient(145deg, #fff 0%, #fff5fa 100%);
+            border: 2px solid #f5c6e0;
+            border-radius: 25px;
+            color: #b87a9e;
             cursor: pointer;
             transition: all 0.3s;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
         }
 
         .tab-btn:hover {
-            background: rgba(255,255,255,0.1);
+            background: linear-gradient(145deg, #fff5fa 0%, #ffe8f5 100%);
+            transform: translateY(-2px);
         }
 
         .tab-btn.active {
-            background: rgba(79,195,247,0.2);
-            border-color: #4fc3f7;
-            color: #4fc3f7;
+            background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%);
+            border-color: #d46a9e;
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(212, 105, 158, 0.4);
         }
 
         .comparison-chart {
@@ -245,9 +290,10 @@
             justify-content: center;
             gap: 40px;
             padding: 20px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
+            background: linear-gradient(180deg, #fff8fc 0%, #f8f0ff 100%);
+            border-radius: 20px;
             margin-top: 20px;
+            border: 2px solid #f5d0e8;
         }
 
         .bar-container {
@@ -258,33 +304,36 @@
         }
 
         .bar {
-            width: 60px;
-            border-radius: 5px 5px 0 0;
+            width: 50px;
+            border-radius: 25px 25px 10px 10px;
             transition: height 0.5s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .bar-wood {
-            background: linear-gradient(180deg, #a1887f 0%, #8d6e63 100%);
+            background: linear-gradient(180deg, #dda0b8 0%, #c48a9f 100%);
         }
 
         .bar-insulation {
-            background: linear-gradient(180deg, #ffd54f 0%, #ffb74d 100%);
+            background: linear-gradient(180deg, #f5d0e8 0%, #e8b8d8 100%);
         }
 
         .bar-total {
-            background: linear-gradient(180deg, #81c784 0%, #66bb6a 100%);
+            background: linear-gradient(180deg, #c9a0dc 0%, #9b59b6 100%);
         }
 
         .bar-label {
             font-size: 0.8em;
-            color: #aaa;
+            color: #9b7aa9;
             text-align: center;
+            font-weight: 600;
         }
 
         .bar-value {
-            font-family: 'Courier New', monospace;
-            color: #fff;
+            font-family: 'Quicksand', sans-serif;
+            color: #8b6a9e;
             font-size: 0.9em;
+            font-weight: 700;
         }
 
         .preset-buttons {
@@ -295,24 +344,29 @@
         }
 
         .preset-btn {
-            padding: 8px 14px;
-            background: rgba(129, 199, 132, 0.15);
-            border: 1px solid rgba(129, 199, 132, 0.4);
-            border-radius: 6px;
-            color: #81c784;
+            padding: 10px 16px;
+            background: linear-gradient(145deg, #fff 0%, #fff5fa 100%);
+            border: 2px solid #e8b8d8;
+            border-radius: 20px;
+            color: #b87a9e;
             cursor: pointer;
             font-size: 0.85em;
             transition: all 0.3s;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
         }
 
         .preset-btn:hover {
-            background: rgba(129, 199, 132, 0.3);
-            border-color: #81c784;
+            background: linear-gradient(145deg, #fff5fa 0%, #ffe0f0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 105, 158, 0.2);
         }
 
         .preset-btn.active {
-            background: rgba(129, 199, 132, 0.4);
-            border-color: #81c784;
+            background: linear-gradient(145deg, #f5a0c8 0%, #d46a9e 100%);
+            border-color: #d46a9e;
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(212, 105, 158, 0.3);
         }
 
         .input-group {
@@ -323,23 +377,25 @@
 
         .input-group input[type="number"] {
             width: 80px;
-            padding: 8px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 6px;
-            color: #fff;
-            font-family: 'Courier New', monospace;
+            padding: 10px;
+            background: linear-gradient(145deg, #fff 0%, #fff8fc 100%);
+            border: 2px solid #f5c6e0;
+            border-radius: 15px;
+            color: #8b6a9e;
+            font-family: 'Quicksand', sans-serif;
             font-size: 1em;
             text-align: right;
+            font-weight: 600;
         }
 
         .input-group input[type="number"]:focus {
             outline: none;
-            border-color: #4fc3f7;
+            border-color: #d46a9e;
+            box-shadow: 0 0 15px rgba(212, 105, 158, 0.3);
         }
 
         .input-group .unit-label {
-            color: #888;
+            color: #b89ac4;
             font-size: 0.9em;
             min-width: 50px;
         }
@@ -352,27 +408,53 @@
         }
 
         .section-header h3 {
-            color: #4fc3f7;
+            color: #c46a9e;
             margin: 0;
+            font-family: 'Pacifico', cursive;
         }
 
         .example-note {
-            background: rgba(255, 183, 77, 0.1);
-            border: 1px solid rgba(255, 183, 77, 0.3);
-            border-radius: 8px;
-            padding: 12px;
+            background: linear-gradient(145deg, #fff0f7 0%, #ffe8f5 100%);
+            border: 2px dashed #f5a8c8;
+            border-radius: 20px;
+            padding: 15px;
             margin-bottom: 20px;
             font-size: 0.85em;
-            color: #ffb74d;
+            color: #b87a9e;
+            position: relative;
+        }
+
+        .example-note::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            font-size: 1.5em;
         }
 
         .example-note strong {
-            color: #ffd54f;
+            color: #d46a9e;
+        }
+
+        /* Crown decoration */
+        .crown {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* Hearts decoration */
+        .hearts {
+            position: absolute;
+            font-size: 1.5em;
+            opacity: 0.3;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="crown"></div>
         <h1>Vägg Egentyngd Kalkylator</h1>
         <p class="subtitle">Beräkna egentyngd för väggkonstruktion med träreglar och isolering</p>
 
@@ -451,7 +533,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Antal fack att visa</label>
+                    <label>Antal fack att visa <span class="unit">[st]</span></label>
                     <div class="input-group">
                         <input type="number" id="numBays" min="1" max="6" step="1" value="3">
                         <span class="unit-label">st</span>
@@ -460,7 +542,7 @@
                 </div>
 
                 <div class="results">
-                    <h3>Beräkningsresultat</h3>
+                    <h3>Resultat</h3>
 
                     <div class="result-row">
                         <span class="result-label">Andel trä:</span>
@@ -478,7 +560,7 @@
                         <span class="result-label">G<sub>k,iso</sub>:</span>
                         <span class="result-value" id="insulationWeight">0.053 kN/m²</span>
                     </div>
-                    <div class="result-row" style="margin-top: 10px; padding-top: 15px; border-top: 2px solid rgba(79,195,247,0.3);">
+                    <div class="result-row" style="margin-top: 10px; padding-top: 15px; border-top: 2px dashed #e8b8d8;">
                         <span class="result-label" style="font-size: 1.1em;">G<sub>k,total</sub>:</span>
                         <span class="result-value total" id="totalWeight">0.124 kN/m²</span>
                     </div>
@@ -534,9 +616,34 @@
     </div>
 
     <script>
+        // Create floating sparkles
+        function createSparkles() {
+            const sparkleChars = ['✨', '💖', '⭐', '🌸', '💕', '✿'];
+            for (let i = 0; i < 15; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = sparkleChars[Math.floor(Math.random() * sparkleChars.length)];
+                sparkle.style.left = Math.random() * 100 + 'vw';
+                sparkle.style.top = Math.random() * 100 + 'vh';
+                sparkle.style.animationDelay = Math.random() * 3 + 's';
+                sparkle.style.fontSize = (Math.random() * 15 + 10) + 'px';
+                document.body.appendChild(sparkle);
+            }
+        }
+        createSparkles();
+
         // Get DOM elements
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Princess color palette
+        const colors = {
+            wood: { main: '#c48a9f', light: '#dda0b8', dark: '#a87088', grain: '#9b6a7f' },
+            insulation: { main: '#f5d0e8', light: '#ffe0f5', dark: '#e8b8d8', pattern: '#dba8c8' },
+            text: '#8b6a9e',
+            dimension: '#c46a9e',
+            background: '#fff5fa'
+        };
 
         // Input pairs (number input + slider)
         const inputPairs = {
@@ -691,10 +798,10 @@
             const startY = (canvas.height - wallThickness * scale) / 2;
 
             // Draw title
-            ctx.fillStyle = '#4fc3f7';
-            ctx.font = '16px Segoe UI';
+            ctx.fillStyle = colors.dimension;
+            ctx.font = '16px Quicksand';
             ctx.textAlign = 'center';
-            ctx.fillText('Tvärsnitt (ovanifrån)', canvas.width / 2, 25);
+            ctx.fillText('✨ Tvärsnitt (ovanifrån) ✨', canvas.width / 2, 25);
 
             // Draw wall sections
             for (let i = 0; i <= numBays; i++) {
@@ -705,29 +812,33 @@
                     const insX = startX + (i - 1) * studSpacing * scale + studWidth * scale;
                     const insWidth = (studSpacing - studWidth) * scale;
 
-                    // Insulation pattern
-                    ctx.fillStyle = '#ffb74d';
+                    // Insulation with gradient
+                    const insGrad = ctx.createLinearGradient(insX, startY, insX, startY + wallThickness * scale);
+                    insGrad.addColorStop(0, colors.insulation.light);
+                    insGrad.addColorStop(1, colors.insulation.main);
+                    ctx.fillStyle = insGrad;
                     ctx.fillRect(insX, startY, insWidth, wallThickness * scale);
 
-                    // Wavy pattern for insulation
-                    ctx.strokeStyle = '#ff9800';
-                    ctx.lineWidth = 1;
-                    for (let y = startY + 10; y < startY + wallThickness * scale; y += 15) {
-                        ctx.beginPath();
-                        ctx.moveTo(insX, y);
-                        for (let x = insX; x < insX + insWidth; x += 10) {
-                            ctx.lineTo(x + 5, y + 3 * Math.sin((x - insX) / 10));
+                    // Heart pattern for insulation
+                    ctx.fillStyle = colors.insulation.pattern;
+                    ctx.font = '12px serif';
+                    for (let y = startY + 15; y < startY + wallThickness * scale - 10; y += 25) {
+                        for (let x = insX + 15; x < insX + insWidth - 10; x += 30) {
+                            ctx.fillText('♡', x + (y % 50 === 15 ? 0 : 15), y);
                         }
-                        ctx.stroke();
                     }
                 }
 
-                // Draw stud
-                ctx.fillStyle = '#8d6e63';
+                // Draw stud with gradient
+                const woodGrad = ctx.createLinearGradient(studX, startY, studX + studWidth * scale, startY);
+                woodGrad.addColorStop(0, colors.wood.light);
+                woodGrad.addColorStop(0.5, colors.wood.main);
+                woodGrad.addColorStop(1, colors.wood.dark);
+                ctx.fillStyle = woodGrad;
                 ctx.fillRect(studX, startY, studWidth * scale, wallThickness * scale);
 
                 // Wood grain pattern
-                ctx.strokeStyle = '#6d4c41';
+                ctx.strokeStyle = colors.wood.grain;
                 ctx.lineWidth = 1;
                 for (let y = startY + 5; y < startY + wallThickness * scale; y += 8) {
                     ctx.beginPath();
@@ -737,11 +848,11 @@
                 }
             }
 
-            // Draw dimensions
-            ctx.strokeStyle = '#4fc3f7';
-            ctx.fillStyle = '#4fc3f7';
-            ctx.lineWidth = 1;
-            ctx.font = '12px Segoe UI';
+            // Draw dimensions with princess style
+            ctx.strokeStyle = colors.dimension;
+            ctx.fillStyle = colors.dimension;
+            ctx.lineWidth = 2;
+            ctx.font = '12px Quicksand';
 
             // Stud width dimension
             const dimY1 = startY - 25;
@@ -794,10 +905,10 @@
             const startY = (canvas.height - wallHeight * scale) / 2;
 
             // Draw title
-            ctx.fillStyle = '#4fc3f7';
-            ctx.font = '16px Segoe UI';
+            ctx.fillStyle = colors.dimension;
+            ctx.font = '16px Quicksand';
             ctx.textAlign = 'center';
-            ctx.fillText('Framifrån (elevation)', canvas.width / 2, 25);
+            ctx.fillText('💖 Framifrån (elevation) 💖', canvas.width / 2, 25);
 
             // Draw wall sections
             for (let i = 0; i <= numBays; i++) {
@@ -808,13 +919,16 @@
                     const insX = startX + (i - 1) * studSpacing * scale + studWidth * scale;
                     const insWidth = (studSpacing - studWidth) * scale;
 
-                    ctx.fillStyle = '#ffb74d';
+                    const insGrad = ctx.createLinearGradient(insX, startY, insX + insWidth, startY);
+                    insGrad.addColorStop(0, colors.insulation.light);
+                    insGrad.addColorStop(1, colors.insulation.main);
+                    ctx.fillStyle = insGrad;
                     ctx.fillRect(insX, startY, insWidth, wallHeight * scale);
 
-                    // Diagonal pattern for insulation
-                    ctx.strokeStyle = '#ff9800';
+                    // Diagonal sparkle pattern
+                    ctx.strokeStyle = colors.insulation.pattern;
                     ctx.lineWidth = 1;
-                    for (let d = -wallHeight * scale; d < insWidth; d += 20) {
+                    for (let d = -wallHeight * scale; d < insWidth; d += 25) {
                         ctx.beginPath();
                         ctx.moveTo(Math.max(insX, insX + d), Math.max(startY, startY - d));
                         ctx.lineTo(Math.min(insX + insWidth, insX + d + wallHeight * scale),
@@ -824,11 +938,15 @@
                 }
 
                 // Draw stud
-                ctx.fillStyle = '#8d6e63';
+                const woodGrad = ctx.createLinearGradient(studX, startY, studX + studWidth * scale, startY);
+                woodGrad.addColorStop(0, colors.wood.light);
+                woodGrad.addColorStop(0.5, colors.wood.main);
+                woodGrad.addColorStop(1, colors.wood.dark);
+                ctx.fillStyle = woodGrad;
                 ctx.fillRect(studX, startY, studWidth * scale, wallHeight * scale);
 
                 // Wood grain pattern (vertical)
-                ctx.strokeStyle = '#6d4c41';
+                ctx.strokeStyle = colors.wood.grain;
                 ctx.lineWidth = 1;
                 for (let x = studX + 3; x < studX + studWidth * scale; x += 6) {
                     ctx.beginPath();
@@ -838,15 +956,19 @@
                 }
             }
 
-            // Draw top and bottom plates
-            ctx.fillStyle = '#a1887f';
+            // Draw top and bottom plates with gradient
+            const plateGrad = ctx.createLinearGradient(startX, 0, startX + totalWidth * scale, 0);
+            plateGrad.addColorStop(0, colors.wood.light);
+            plateGrad.addColorStop(1, colors.wood.main);
+            ctx.fillStyle = plateGrad;
             ctx.fillRect(startX, startY - 15, totalWidth * scale, 15);
             ctx.fillRect(startX, startY + wallHeight * scale, totalWidth * scale, 15);
 
             // Dimensions
-            ctx.strokeStyle = '#4fc3f7';
-            ctx.fillStyle = '#4fc3f7';
-            ctx.font = '12px Segoe UI';
+            ctx.strokeStyle = colors.dimension;
+            ctx.fillStyle = colors.dimension;
+            ctx.lineWidth = 2;
+            ctx.font = '12px Quicksand';
 
             const dimY = startY + wallHeight * scale + 40;
             ctx.beginPath();
@@ -876,10 +998,10 @@
             const isoY = 0.4;
 
             // Draw title
-            ctx.fillStyle = '#4fc3f7';
-            ctx.font = '16px Segoe UI';
+            ctx.fillStyle = colors.dimension;
+            ctx.font = '16px Quicksand';
             ctx.textAlign = 'center';
-            ctx.fillText('3D Isometrisk vy', canvas.width / 2, 25);
+            ctx.fillText('🌸 3D Isometrisk vy 🌸', canvas.width / 2, 25);
 
             function toIso(x, y, z) {
                 return {
@@ -898,7 +1020,7 @@
                     const insWidth = studSpacing - studWidth;
 
                     // Back face
-                    ctx.fillStyle = '#e6a23c';
+                    ctx.fillStyle = colors.insulation.dark;
                     ctx.beginPath();
                     let p = toIso(insX, 0, depth);
                     ctx.moveTo(p.x, p.y);
@@ -912,7 +1034,7 @@
                     ctx.fill();
 
                     // Top face
-                    ctx.fillStyle = '#ffc966';
+                    ctx.fillStyle = colors.insulation.light;
                     ctx.beginPath();
                     p = toIso(insX, wallHeight, 0);
                     ctx.moveTo(p.x, p.y);
@@ -926,7 +1048,7 @@
                     ctx.fill();
 
                     // Front face
-                    ctx.fillStyle = '#ffb74d';
+                    ctx.fillStyle = colors.insulation.main;
                     ctx.beginPath();
                     p = toIso(insX, 0, 0);
                     ctx.moveTo(p.x, p.y);
@@ -942,7 +1064,7 @@
 
                 // Draw stud
                 // Back face
-                ctx.fillStyle = '#6d4c41';
+                ctx.fillStyle = colors.wood.dark;
                 ctx.beginPath();
                 let p = toIso(studXPos, 0, depth);
                 ctx.moveTo(p.x, p.y);
@@ -956,7 +1078,7 @@
                 ctx.fill();
 
                 // Right face
-                ctx.fillStyle = '#7d5a4a';
+                ctx.fillStyle = colors.wood.grain;
                 ctx.beginPath();
                 p = toIso(studXPos + studWidth, 0, 0);
                 ctx.moveTo(p.x, p.y);
@@ -970,7 +1092,7 @@
                 ctx.fill();
 
                 // Top face
-                ctx.fillStyle = '#a1887f';
+                ctx.fillStyle = colors.wood.light;
                 ctx.beginPath();
                 p = toIso(studXPos, wallHeight, 0);
                 ctx.moveTo(p.x, p.y);
@@ -984,7 +1106,7 @@
                 ctx.fill();
 
                 // Front face
-                ctx.fillStyle = '#8d6e63';
+                ctx.fillStyle = colors.wood.main;
                 ctx.beginPath();
                 p = toIso(studXPos, 0, 0);
                 ctx.moveTo(p.x, p.y);
@@ -998,7 +1120,7 @@
                 ctx.fill();
 
                 // Wood grain on front
-                ctx.strokeStyle = '#6d4c41';
+                ctx.strokeStyle = colors.wood.grain;
                 ctx.lineWidth = 1;
                 for (let y = 10; y < wallHeight; y += 15) {
                     ctx.beginPath();
@@ -1011,13 +1133,14 @@
             }
 
             // Draw dimension labels
-            ctx.fillStyle = '#4fc3f7';
-            ctx.font = '11px Segoe UI';
+            ctx.fillStyle = colors.dimension;
+            ctx.font = '11px Quicksand';
 
             // Width dimension
             let p1 = toIso(0, -30, 0);
             let p2 = toIso(studSpacing, -30, 0);
-            ctx.strokeStyle = '#4fc3f7';
+            ctx.strokeStyle = colors.dimension;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
