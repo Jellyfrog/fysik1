@@ -38,7 +38,7 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 380px 1fr;
             gap: 30px;
         }
 
@@ -286,6 +286,89 @@
             color: #fff;
             font-size: 0.9em;
         }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 8px 14px;
+            background: rgba(129, 199, 132, 0.15);
+            border: 1px solid rgba(129, 199, 132, 0.4);
+            border-radius: 6px;
+            color: #81c784;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .preset-btn:hover {
+            background: rgba(129, 199, 132, 0.3);
+            border-color: #81c784;
+        }
+
+        .preset-btn.active {
+            background: rgba(129, 199, 132, 0.4);
+            border-color: #81c784;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            text-align: right;
+        }
+
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+
+        .input-group .unit-label {
+            color: #888;
+            font-size: 0.9em;
+            min-width: 50px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h3 {
+            color: #4fc3f7;
+            margin: 0;
+        }
+
+        .example-note {
+            background: rgba(255, 183, 77, 0.1);
+            border: 1px solid rgba(255, 183, 77, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #ffb74d;
+        }
+
+        .example-note strong {
+            color: #ffd54f;
+        }
     </style>
 </head>
 <body>
@@ -295,56 +378,84 @@
 
         <div class="main-content">
             <div class="controls">
-                <h3 style="color: #4fc3f7; margin-bottom: 20px;">Materialegenskaper</h3>
+                <div class="example-note">
+                    <strong>Förenklade värden från anteckningar:</strong><br>
+                    Trä: 5 kN/m³, Isolering: 0.3 kN/m³<br>
+                    Regel: 45mm, c/c 600mm, Tjocklek: 190mm<br>
+                    → G<sub>k</sub> = 0.124 kN/m²
+                </div>
+
+                <div class="section-header">
+                    <h3>Förval</h3>
+                </div>
+                <div class="preset-buttons">
+                    <button class="preset-btn active" id="presetExample">Exempel (0.124)</button>
+                    <button class="preset-btn" id="presetThin">Tunn vägg</button>
+                    <button class="preset-btn" id="presetThick">Tjock vägg</button>
+                    <button class="preset-btn" id="presetWoodOnly">Endast trä</button>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header">
+                    <h3>Materialegenskaper</h3>
+                </div>
 
                 <div class="control-group">
                     <label>Densitet trä (γ<sub>trä</sub>) <span class="unit">[kN/m³]</span></label>
-                    <div class="slider-container">
-                        <input type="range" id="woodDensity" min="3" max="8" step="0.1" value="5">
-                        <span class="value-display" id="woodDensityValue">5.0</span>
+                    <div class="input-group">
+                        <input type="number" id="woodDensity" min="1" max="12" step="0.1" value="5">
+                        <span class="unit-label">kN/m³</span>
+                        <input type="range" id="woodDensitySlider" min="1" max="12" step="0.1" value="5">
                     </div>
                 </div>
 
                 <div class="control-group">
                     <label>Densitet isolering (γ<sub>iso</sub>) <span class="unit">[kN/m³]</span></label>
-                    <div class="slider-container">
-                        <input type="range" id="insulationDensity" min="0.1" max="1.0" step="0.05" value="0.3">
-                        <span class="value-display" id="insulationDensityValue">0.30</span>
+                    <div class="input-group">
+                        <input type="number" id="insulationDensity" min="0.05" max="2" step="0.05" value="0.3">
+                        <span class="unit-label">kN/m³</span>
+                        <input type="range" id="insulationDensitySlider" min="0.05" max="2" step="0.05" value="0.3">
                     </div>
                 </div>
 
                 <div class="section-divider"></div>
-                <h3 style="color: #4fc3f7; margin-bottom: 20px;">Geometri</h3>
+                <div class="section-header">
+                    <h3>Geometri</h3>
+                </div>
 
                 <div class="control-group">
                     <label>Regelbredd <span class="unit">[mm]</span></label>
-                    <div class="slider-container">
-                        <input type="range" id="studWidth" min="30" max="70" step="5" value="45">
-                        <span class="value-display" id="studWidthValue">45</span>
+                    <div class="input-group">
+                        <input type="number" id="studWidth" min="20" max="100" step="1" value="45">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="studWidthSlider" min="20" max="100" step="1" value="45">
                     </div>
                 </div>
 
                 <div class="control-group">
                     <label>Centrumavstånd (c/c) <span class="unit">[mm]</span></label>
-                    <div class="slider-container">
-                        <input type="range" id="studSpacing" min="300" max="900" step="50" value="600">
-                        <span class="value-display" id="studSpacingValue">600</span>
+                    <div class="input-group">
+                        <input type="number" id="studSpacing" min="200" max="1200" step="10" value="600">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="studSpacingSlider" min="200" max="1200" step="10" value="600">
                     </div>
                 </div>
 
                 <div class="control-group">
                     <label>Väggtjocklek <span class="unit">[mm]</span></label>
-                    <div class="slider-container">
-                        <input type="range" id="wallThickness" min="70" max="300" step="10" value="140">
-                        <span class="value-display" id="wallThicknessValue">140</span>
+                    <div class="input-group">
+                        <input type="number" id="wallThickness" min="50" max="400" step="1" value="190">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="wallThicknessSlider" min="50" max="400" step="1" value="190">
                     </div>
                 </div>
 
                 <div class="control-group">
                     <label>Antal fack att visa</label>
-                    <div class="slider-container">
-                        <input type="range" id="numBays" min="1" max="5" step="1" value="3">
-                        <span class="value-display" id="numBaysValue">3</span>
+                    <div class="input-group">
+                        <input type="number" id="numBays" min="1" max="6" step="1" value="3">
+                        <span class="unit-label">st</span>
+                        <input type="range" id="numBaysSlider" min="1" max="6" step="1" value="3">
                     </div>
                 </div>
 
@@ -361,15 +472,15 @@
                     </div>
                     <div class="result-row">
                         <span class="result-label">G<sub>k,trä</sub>:</span>
-                        <span class="result-value" id="woodWeight">0.053 kN/m²</span>
+                        <span class="result-value" id="woodWeight">0.071 kN/m²</span>
                     </div>
                     <div class="result-row">
                         <span class="result-label">G<sub>k,iso</sub>:</span>
-                        <span class="result-value" id="insulationWeight">0.039 kN/m²</span>
+                        <span class="result-value" id="insulationWeight">0.053 kN/m²</span>
                     </div>
                     <div class="result-row" style="margin-top: 10px; padding-top: 15px; border-top: 2px solid rgba(79,195,247,0.3);">
                         <span class="result-label" style="font-size: 1.1em;">G<sub>k,total</sub>:</span>
-                        <span class="result-value total" id="totalWeight">0.092 kN/m²</span>
+                        <span class="result-value total" id="totalWeight">0.124 kN/m²</span>
                     </div>
 
                     <div class="formula-box">
@@ -403,17 +514,17 @@
 
                 <div class="comparison-chart">
                     <div class="bar-container">
-                        <div class="bar-value" id="barWoodValue">0.053</div>
+                        <div class="bar-value" id="barWoodValue">0.071</div>
                         <div class="bar bar-wood" id="barWood" style="height: 50px;"></div>
                         <div class="bar-label">Trä<br>bidrag</div>
                     </div>
                     <div class="bar-container">
-                        <div class="bar-value" id="barInsulationValue">0.039</div>
+                        <div class="bar-value" id="barInsulationValue">0.053</div>
                         <div class="bar bar-insulation" id="barInsulation" style="height: 40px;"></div>
                         <div class="bar-label">Isolering<br>bidrag</div>
                     </div>
                     <div class="bar-container">
-                        <div class="bar-value" id="barTotalValue">0.092</div>
+                        <div class="bar-value" id="barTotalValue">0.124</div>
                         <div class="bar bar-total" id="barTotal" style="height: 90px;"></div>
                         <div class="bar-label">Total<br>egentyngd</div>
                     </div>
@@ -427,30 +538,32 @@
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Input elements
-        const inputs = {
-            woodDensity: document.getElementById('woodDensity'),
-            insulationDensity: document.getElementById('insulationDensity'),
-            studWidth: document.getElementById('studWidth'),
-            studSpacing: document.getElementById('studSpacing'),
-            wallThickness: document.getElementById('wallThickness'),
-            numBays: document.getElementById('numBays')
+        // Input pairs (number input + slider)
+        const inputPairs = {
+            woodDensity: { num: document.getElementById('woodDensity'), slider: document.getElementById('woodDensitySlider') },
+            insulationDensity: { num: document.getElementById('insulationDensity'), slider: document.getElementById('insulationDensitySlider') },
+            studWidth: { num: document.getElementById('studWidth'), slider: document.getElementById('studWidthSlider') },
+            studSpacing: { num: document.getElementById('studSpacing'), slider: document.getElementById('studSpacingSlider') },
+            wallThickness: { num: document.getElementById('wallThickness'), slider: document.getElementById('wallThicknessSlider') },
+            numBays: { num: document.getElementById('numBays'), slider: document.getElementById('numBaysSlider') }
         };
 
         // Display elements
         const displays = {
-            woodDensityValue: document.getElementById('woodDensityValue'),
-            insulationDensityValue: document.getElementById('insulationDensityValue'),
-            studWidthValue: document.getElementById('studWidthValue'),
-            studSpacingValue: document.getElementById('studSpacingValue'),
-            wallThicknessValue: document.getElementById('wallThicknessValue'),
-            numBaysValue: document.getElementById('numBaysValue'),
             woodFraction: document.getElementById('woodFraction'),
             insulationFraction: document.getElementById('insulationFraction'),
             woodWeight: document.getElementById('woodWeight'),
             insulationWeight: document.getElementById('insulationWeight'),
             totalWeight: document.getElementById('totalWeight'),
             formulaExpanded: document.getElementById('formulaExpanded')
+        };
+
+        // Presets
+        const presets = {
+            presetExample: { woodDensity: 5, insulationDensity: 0.3, studWidth: 45, studSpacing: 600, wallThickness: 190, numBays: 3 },
+            presetThin: { woodDensity: 5, insulationDensity: 0.3, studWidth: 45, studSpacing: 600, wallThickness: 95, numBays: 3 },
+            presetThick: { woodDensity: 5, insulationDensity: 0.3, studWidth: 45, studSpacing: 600, wallThickness: 220, numBays: 3 },
+            presetWoodOnly: { woodDensity: 5, insulationDensity: 0.3, studWidth: 45, studSpacing: 45, wallThickness: 220, numBays: 3 }
         };
 
         let currentView = 'cross';
@@ -465,43 +578,81 @@
             });
         });
 
+        // Preset buttons
+        Object.keys(presets).forEach(presetId => {
+            document.getElementById(presetId).addEventListener('click', () => {
+                const preset = presets[presetId];
+                Object.keys(preset).forEach(key => {
+                    if (inputPairs[key]) {
+                        inputPairs[key].num.value = preset[key];
+                        inputPairs[key].slider.value = preset[key];
+                    }
+                });
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(presetId).classList.add('active');
+                update();
+            });
+        });
+
+        // Sync number inputs with sliders
+        Object.keys(inputPairs).forEach(key => {
+            const pair = inputPairs[key];
+
+            pair.num.addEventListener('input', () => {
+                pair.slider.value = pair.num.value;
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                update();
+            });
+
+            pair.slider.addEventListener('input', () => {
+                pair.num.value = pair.slider.value;
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                update();
+            });
+        });
+
+        // Get current values
+        function getValues() {
+            return {
+                woodDensity: parseFloat(inputPairs.woodDensity.num.value),
+                insulationDensity: parseFloat(inputPairs.insulationDensity.num.value),
+                studWidth: parseFloat(inputPairs.studWidth.num.value),
+                studSpacing: parseFloat(inputPairs.studSpacing.num.value),
+                wallThickness: parseFloat(inputPairs.wallThickness.num.value),
+                numBays: parseInt(inputPairs.numBays.num.value)
+            };
+        }
+
         // Update function
         function update() {
-            const woodDensity = parseFloat(inputs.woodDensity.value);
-            const insulationDensity = parseFloat(inputs.insulationDensity.value);
-            const studWidth = parseFloat(inputs.studWidth.value) / 1000; // Convert to meters
-            const studSpacing = parseFloat(inputs.studSpacing.value) / 1000;
-            const wallThickness = parseFloat(inputs.wallThickness.value) / 1000;
-            const numBays = parseInt(inputs.numBays.value);
+            const v = getValues();
 
-            // Update display values
-            displays.woodDensityValue.textContent = woodDensity.toFixed(1);
-            displays.insulationDensityValue.textContent = insulationDensity.toFixed(2);
-            displays.studWidthValue.textContent = (studWidth * 1000).toFixed(0);
-            displays.studSpacingValue.textContent = (studSpacing * 1000).toFixed(0);
-            displays.wallThicknessValue.textContent = (wallThickness * 1000).toFixed(0);
-            displays.numBaysValue.textContent = numBays;
+            // Convert to meters for calculation
+            const studWidthM = v.studWidth / 1000;
+            const studSpacingM = v.studSpacing / 1000;
+            const wallThicknessM = v.wallThickness / 1000;
 
             // Calculate fractions
-            const woodFraction = studWidth / studSpacing;
+            const woodFraction = studWidthM / studSpacingM;
             const insulationFraction = 1 - woodFraction;
 
             // Calculate weights (kN/m²)
-            const woodWeight = woodDensity * wallThickness * woodFraction;
-            const insulationWeight = insulationDensity * wallThickness * insulationFraction;
+            const woodWeight = v.woodDensity * wallThicknessM * woodFraction;
+            const insulationWeight = v.insulationDensity * wallThicknessM * insulationFraction;
             const totalWeight = woodWeight + insulationWeight;
 
-            // Update results
+            // Update results - using 3 decimal precision to match hand calculations
             displays.woodFraction.textContent = woodFraction.toFixed(3);
             displays.insulationFraction.textContent = insulationFraction.toFixed(3);
-            displays.woodWeight.textContent = woodWeight.toFixed(4) + ' kN/m²';
-            displays.insulationWeight.textContent = insulationWeight.toFixed(4) + ' kN/m²';
-            displays.totalWeight.textContent = totalWeight.toFixed(4) + ' kN/m²';
+            displays.woodWeight.textContent = woodWeight.toFixed(3) + ' kN/m²';
+            displays.insulationWeight.textContent = insulationWeight.toFixed(3) + ' kN/m²';
+            displays.totalWeight.textContent = totalWeight.toFixed(3) + ' kN/m²';
 
-            // Update formula
+            // Update formula with step-by-step calculation
             displays.formulaExpanded.innerHTML =
-                `<span class="highlight">G<sub>k</sub> = ${woodDensity.toFixed(1)} · ${wallThickness.toFixed(3)} · ${woodFraction.toFixed(3)} + ${insulationDensity.toFixed(2)} · ${wallThickness.toFixed(3)} · ${insulationFraction.toFixed(3)}</span><br>` +
-                `<span class="highlight">G<sub>k</sub> = ${totalWeight.toFixed(4)} kN/m²</span>`;
+                `G<sub>k</sub> = ${v.woodDensity} · ${wallThicknessM.toFixed(3)} · ${woodFraction.toFixed(3)} + ${v.insulationDensity} · ${wallThicknessM.toFixed(3)} · ${insulationFraction.toFixed(3)}<br>` +
+                `G<sub>k</sub> = ${woodWeight.toFixed(3)} + ${insulationWeight.toFixed(3)}<br>` +
+                `<span class="highlight">G<sub>k</sub> = ${totalWeight.toFixed(3)} kN/m²</span>`;
 
             // Update bars
             const maxHeight = 150;
@@ -519,19 +670,16 @@
         }
 
         function draw() {
-            const studWidth = parseFloat(inputs.studWidth.value);
-            const studSpacing = parseFloat(inputs.studSpacing.value);
-            const wallThickness = parseFloat(inputs.wallThickness.value);
-            const numBays = parseInt(inputs.numBays.value);
+            const v = getValues();
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (currentView === 'cross') {
-                drawCrossSection(studWidth, studSpacing, wallThickness, numBays);
+                drawCrossSection(v.studWidth, v.studSpacing, v.wallThickness, v.numBays);
             } else if (currentView === 'front') {
-                drawFrontView(studWidth, studSpacing, wallThickness, numBays);
+                drawFrontView(v.studWidth, v.studSpacing, v.wallThickness, v.numBays);
             } else {
-                draw3DView(studWidth, studSpacing, wallThickness, numBays);
+                draw3DView(v.studWidth, v.studSpacing, v.wallThickness, v.numBays);
             }
         }
 
@@ -886,11 +1034,6 @@
             ctx.stroke();
             ctx.fillText(wallThickness + ' mm', (p1.x + p2.x) / 2 + 30, (p1.y + p2.y) / 2);
         }
-
-        // Add event listeners
-        Object.values(inputs).forEach(input => {
-            input.addEventListener('input', update);
-        });
 
         // Handle canvas resize
         function resizeCanvas() {
