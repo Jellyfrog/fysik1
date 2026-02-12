@@ -2,10 +2,147 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=wall-weight-calculator.html">
-    <title>Fysik Visualisering</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Byggmekanik - Interaktiva Studieverktyg</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🏗️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style id="theme-styles"></style>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; padding: 20px; transition: background 0.5s ease, color 0.5s ease; overflow-x: hidden; }
+        .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+        .theme-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .theme-btn { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+        .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 30px; }
+        .tool-card { border-radius: 20px; padding: 25px; text-decoration: none; transition: all 0.3s; display: block; }
+        .tool-card:hover { transform: translateY(-5px); }
+        .tool-icon { font-size: 2.5em; margin-bottom: 15px; }
+        .tool-title { font-size: 1.3em; font-weight: 700; margin-bottom: 8px; }
+        .tool-desc { font-size: 0.9em; line-height: 1.5; }
+        .decoration { position: fixed; pointer-events: none; animation: float 3s ease-in-out infinite; z-index: 0; }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 1; } }
+        @keyframes catBounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
+        .cat-decoration { animation: catBounce 2s ease-in-out infinite; }
+        .footer { text-align: center; margin-top: 40px; font-size: 0.85em; opacity: 0.6; }
+    </style>
 </head>
 <body>
-    <p>Omdirigerar till <a href="wall-weight-calculator.html">Vägg Egentyngd Kalkylator</a>...</p>
+    <div class="container">
+        <div class="theme-selector">
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
+            <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
+        </div>
+
+        <h1 id="main-title">Byggmekanik</h1>
+        <p class="subtitle">Interaktiva studieverktyg for tentamen</p>
+
+        <div class="tools-grid">
+            <a href="beam-calculator.html" class="tool-card" id="card1">
+                <div class="tool-icon">📊</div>
+                <div class="tool-title">Balkberaknare</div>
+                <div class="tool-desc">Interaktiva V- och M-diagram for olika belastningsfall. Punktlast, utbredd last, konsolbalk. Med forklaringar av tvarkraft, moment och nedböjning.</div>
+            </a>
+
+            <a href="snow-load-calculator.html" class="tool-card" id="card2">
+                <div class="tool-icon">❄️</div>
+                <div class="tool-title">Snolastberaknare</div>
+                <div class="tool-desc">Berakna snolast pa tak enligt SS-EN 1991-1-3. Pulpettak och sadeltak med interaktiv formfaktorsgraf och takvisualisering.</div>
+            </a>
+
+            <a href="timber-beam-calculator.html" class="tool-card" id="card3">
+                <div class="tool-icon">🪵</div>
+                <div class="tool-title">Trabalksberaknare</div>
+                <div class="tool-desc">Steg-for-steg dimensionering av fritt upplagd trabalk. k_mod, k_h, moment- och tvarkraftkapacitet med utnyttjandegrader.</div>
+            </a>
+
+            <a href="wall-weight-calculator.html" class="tool-card" id="card4">
+                <div class="tool-icon">🧱</div>
+                <div class="tool-title">Vagg Egentyngd</div>
+                <div class="tool-desc">Berakna egentyngd for vaggkonstruktion med trareglar och isolering. 2D, framifrån och 3D-visualisering.</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            Baserat pa formelsamling for tentamen — Byggmekanik & Konstruktionsteknik
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            serious: {
+                decorations: [],
+                css: `
+                    body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #4fc3f7; font-weight: 600; font-size: 2.5em; }
+                    .subtitle { text-align: center; color: #9e9e9e; margin-bottom: 10px; font-size: 1.1em; }
+                    .theme-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
+                    .theme-btn:hover, .theme-btn.active { background: rgba(79,195,247,0.2); border-color: #4fc3f7; color: #4fc3f7; }
+                    .tool-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e0e0e0; }
+                    .tool-card:hover { background: rgba(79,195,247,0.1); border-color: #4fc3f7; box-shadow: 0 10px 30px rgba(79,195,247,0.2); }
+                    .tool-title { color: #4fc3f7; }
+                    .tool-desc { color: #9e9e9e; }
+                    .footer { color: #666; }
+                `
+            },
+            princess: {
+                decorations: ['✨', '💖', '⭐', '🌸', '💕', '✿'],
+                css: `
+                    body { font-family: 'Quicksand', sans-serif; background: linear-gradient(135deg, #ffeef8 0%, #f8e1f4 30%, #e8d5f9 70%, #dcd0ff 100%); color: #5a4a6a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #d4699e; font-family: 'Pacifico', cursive; font-size: 2.8em; text-shadow: 2px 2px 4px rgba(212, 105, 158, 0.3); }
+                    .subtitle { text-align: center; color: #9b7aa9; margin-bottom: 10px; font-size: 1.1em; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff5fa 100%); border: 2px solid #f5c6e0; color: #b87a9e; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; }
+                    .tool-card { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,240,250,0.9) 100%); border: 3px solid #f5c6e0; color: #5a4a6a; }
+                    .tool-card:hover { border-color: #d46a9e; box-shadow: 0 10px 30px rgba(212,105,158,0.3); transform: translateY(-5px) rotate(-0.5deg); }
+                    .tool-title { color: #c46a9e; font-family: 'Pacifico', cursive; }
+                    .tool-desc { color: #9b7aa9; }
+                    .footer { color: #b89ac4; }
+                `
+            },
+            cats: {
+                decorations: ['🐱', '🐾', '🐟', '🧶', '😺', '🐈'],
+                css: `
+                    body { font-family: 'Comic Neue', cursive; background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 30%, #ffe8d6 70%, #ffeee0 100%); color: #4a4a4a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #ff7744; font-size: 2.5em; font-weight: 700; }
+                    h1::before { content: '😺 '; } h1::after { content: ' 😺'; }
+                    .subtitle { text-align: center; color: #888; margin-bottom: 10px; font-size: 1.1em; }
+                    .subtitle::before { content: '🐾 '; } .subtitle::after { content: ' 🐾'; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff8f0 100%); border: 2px solid #ffd4b8; color: #ff9966; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; }
+                    .tool-card { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.95) 100%); border: 3px solid #ffd4b8; color: #4a4a4a; }
+                    .tool-card:hover { border-color: #ff7744; box-shadow: 0 10px 30px rgba(255,120,70,0.2); transform: translateY(-5px) rotate(1deg); }
+                    .tool-title { color: #ff7744; }
+                    .tool-desc { color: #888; }
+                    .footer { color: #ccc; }
+                    .decoration { animation-name: catBounce; }
+                `
+            }
+        };
+
+        function setTheme(themeName) {
+            const theme = themes[themeName];
+            document.getElementById('theme-styles').textContent = theme.css;
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === themeName));
+            document.querySelectorAll('.decoration').forEach(el => el.remove());
+            if (theme.decorations.length > 0) {
+                for (let i = 0; i < 15; i++) {
+                    const dec = document.createElement('div');
+                    dec.className = 'decoration';
+                    if (themeName === 'cats') dec.classList.add('cat-decoration');
+                    dec.textContent = theme.decorations[Math.floor(Math.random() * theme.decorations.length)];
+                    dec.style.left = Math.random() * 100 + 'vw';
+                    dec.style.top = Math.random() * 100 + 'vh';
+                    dec.style.animationDelay = Math.random() * 3 + 's';
+                    dec.style.fontSize = (Math.random() * 15 + 12) + 'px';
+                    document.body.appendChild(dec);
+                }
+            }
+            localStorage.setItem('indexTheme', themeName);
+        }
+
+        const savedTheme = localStorage.getItem('indexTheme') || 'serious';
+        setTheme(savedTheme);
+    </script>
 </body>
 </html>
