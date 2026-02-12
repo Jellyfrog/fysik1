@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabalksberaknare - Dimensionering</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🪵</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style id="theme-styles"></style>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; padding: 20px; transition: background 0.5s ease, color 0.5s ease; overflow-x: hidden; }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+        .back-link { display: inline-block; margin-bottom: 15px; text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .theme-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .theme-btn { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+        .main-content { display: grid; grid-template-columns: 420px 1fr; gap: 30px; }
+        @media (max-width: 950px) { .main-content { grid-template-columns: 1fr; } }
+        .control-group { margin-bottom: 16px; }
+        .control-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95em; }
+        .input-group { display: flex; align-items: center; gap: 10px; }
+        .input-group input[type="number"] { width: 80px; padding: 8px; font-size: 1em; text-align: right; font-weight: 600; }
+        .input-group .unit-label { font-size: 0.85em; min-width: 40px; }
+        .input-group select { padding: 8px; font-size: 0.95em; border-radius: 8px; font-weight: 600; }
+        input[type="range"] { flex: 1; height: 10px; border-radius: 10px; outline: none; -webkit-appearance: none; }
+        canvas { border-radius: 20px; width: 100%; }
+        .result-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95em; }
+        .section-divider { height: 2px; margin: 16px 0; }
+        .step-container { margin-bottom: 15px; padding: 15px; border-radius: 12px; }
+        .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .step-number { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9em; flex-shrink: 0; }
+        .step-title { font-weight: 700; font-size: 1em; }
+        .utilization-bar { height: 24px; border-radius: 12px; margin: 8px 0; overflow: hidden; position: relative; }
+        .utilization-fill { height: 100%; border-radius: 12px; transition: width 0.5s ease; }
+        .utilization-text { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; font-size: 0.85em; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85em; }
+        .status-ok { background: rgba(102,187,106,0.2); color: #66bb6a; }
+        .status-fail { background: rgba(239,83,80,0.2); color: #ef5350; }
+        .decoration { position: fixed; pointer-events: none; animation: float 3s ease-in-out infinite; z-index: 0; }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 1; } }
+        @keyframes catBounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
+        .cat-decoration { animation: catBounce 2s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link" id="backLink">← Tillbaka</a>
+        <div class="theme-selector">
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
+            <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
+        </div>
+        <h1 id="main-title">Trabalksberaknare</h1>
+        <p class="subtitle">Steg-for-steg dimensionering av fritt upplagd trabalk</p>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="example-note">
+                    <strong>Arbetsgang enligt formelsamlingen:</strong><br>
+                    1. Bestam k<sub>mod</sub> → 2. Bestam γ<sub>m</sub> → 3. Bestam k<sub>h</sub><br>
+                    4. Rakna f<sub>m,d</sub> och f<sub>v,d</sub> → 5. Kontrollera M → 6. Kontrollera V
+                </div>
+
+                <div class="section-header"><h3>Material</h3></div>
+                <div class="control-group">
+                    <label>Hallfasthetsklass</label>
+                    <div class="input-group">
+                        <select id="timberClass">
+                            <option value="C14">C14</option>
+                            <option value="C16">C16</option>
+                            <option value="C18">C18</option>
+                            <option value="C20">C20</option>
+                            <option value="C22">C22</option>
+                            <option value="C24" selected>C24</option>
+                            <option value="C27">C27</option>
+                            <option value="C30">C30</option>
+                            <option value="C35">C35</option>
+                            <option value="C40">C40</option>
+                            <option value="GL24c">GL24c</option>
+                            <option value="GL28c">GL28c</option>
+                            <option value="GL32c">GL32c</option>
+                            <option value="GL24h">GL24h</option>
+                            <option value="GL28h">GL28h</option>
+                            <option value="GL30h">GL30h</option>
+                            <option value="GL32h">GL32h</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Klimatklass</label>
+                    <div class="input-group">
+                        <select id="climateClass">
+                            <option value="1" selected>1 (Inomhus, uppvarmt)</option>
+                            <option value="2">2 (Under tak, ouppvarmt)</option>
+                            <option value="3">3 (Utomhus)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Lastvaraktighetsklass</label>
+                    <div class="input-group">
+                        <select id="loadDuration">
+                            <option value="P">P (Permanent)</option>
+                            <option value="L">L (Langtid)</option>
+                            <option value="M" selected>M (Medeltid, t.ex. sno)</option>
+                            <option value="S">S (Korttid)</option>
+                            <option value="I">I (Momentan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Tvarsnitt</h3></div>
+
+                <div class="control-group">
+                    <label>Bredd (b) <span class="unit">[mm]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="beamWidth" min="20" max="300" step="5" value="45">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="beamWidthSlider" min="20" max="300" step="5" value="45">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Hojd (h) <span class="unit">[mm]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="beamHeight" min="50" max="600" step="5" value="220">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="beamHeightSlider" min="50" max="600" step="5" value="220">
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Laster (dimensionerande)</h3></div>
+
+                <div class="control-group">
+                    <label>M<sub>Ed</sub> (dimensionerande moment) <span class="unit">[kNm]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="mEd" min="0" max="200" step="0.5" value="8">
+                        <span class="unit-label">kNm</span>
+                        <input type="range" id="mEdSlider" min="0" max="200" step="0.5" value="8">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>V<sub>Ed</sub> (dimensionerande tvarkraft) <span class="unit">[kN]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="vEd" min="0" max="200" step="0.5" value="12">
+                        <span class="unit-label">kN</span>
+                        <input type="range" id="vEdSlider" min="0" max="200" step="0.5" value="12">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Exponerad for nederbord/sol?</label>
+                    <div class="input-group">
+                        <select id="exposed">
+                            <option value="no" selected>Nej</option>
+                            <option value="yes">Ja</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <canvas id="crossSection" width="800" height="200"></canvas>
+
+                <div id="stepsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Timber data from the PDF table
+        const timberData = {
+            C14:  { fmk: 14, fvk: 3, E005: 4700, fc0k: 16, type: 'C' },
+            C16:  { fmk: 16, fvk: 3.2, E005: 5400, fc0k: 17, type: 'C' },
+            C18:  { fmk: 18, fvk: 3.4, E005: 6000, fc0k: 18, type: 'C' },
+            C20:  { fmk: 20, fvk: 3.6, E005: 6400, fc0k: 19, type: 'C' },
+            C22:  { fmk: 22, fvk: 3.8, E005: 6700, fc0k: 20, type: 'C' },
+            C24:  { fmk: 24, fvk: 4, E005: 7400, fc0k: 21, type: 'C' },
+            C27:  { fmk: 27, fvk: 4, E005: 7700, fc0k: 22, type: 'C' },
+            C30:  { fmk: 30, fvk: 4, E005: 8000, fc0k: 24, type: 'C' },
+            C35:  { fmk: 35, fvk: 4, E005: 8700, fc0k: 25, type: 'C' },
+            C40:  { fmk: 40, fvk: 4, E005: 940, fc0k: 27, type: 'C' },
+            GL24c: { fmk: 24, fvk: 3.5, E005: 9100, fc0k: 21.5, type: 'GL' },
+            GL28c: { fmk: 28, fvk: 3.5, E005: 10400, fc0k: 24, type: 'GL' },
+            GL32c: { fmk: 32, fvk: 3.5, E005: 11200, fc0k: 24.5, type: 'GL' },
+            GL24h: { fmk: 24, fvk: 3.5, E005: 9600, fc0k: 24, type: 'GL' },
+            GL28h: { fmk: 28, fvk: 3.5, E005: 10500, fc0k: 28, type: 'GL' },
+            GL30h: { fmk: 30, fvk: 3.5, E005: 11300, fc0k: 30, type: 'GL' },
+            GL32h: { fmk: 32, fvk: 3.5, E005: 11800, fc0k: 32, type: 'GL' }
+        };
+
+        // kmod table from PDF
+        const kmodTable = {
+            C: { 1: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                 2: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                 3: { P: 0.5, L: 0.55, M: 0.65, S: 0.7, I: 0.9 } },
+            GL: { 1: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                  2: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                  3: { P: 0.5, L: 0.55, M: 0.65, S: 0.7, I: 0.9 } }
+        };
+
+        const gammaM = { C: 1.3, GL: 1.25 };
+
+        const themes = {
+            serious: {
+                name: 'Serios', decorations: [],
+                colors: { accent: '#4fc3f7', text: '#e0e0e0', textMuted: '#9e9e9e', total: '#81c784', canvasBg: '#0d1421',
+                    wood: '#8d6e63', woodLight: '#a1887f', woodDark: '#6d4c41', ok: '#66bb6a', fail: '#ef5350',
+                    stepBg: 'rgba(79,195,247,0.08)', stepBorder: 'rgba(79,195,247,0.2)', stepNum: '#4fc3f7',
+                    barBg: 'rgba(255,255,255,0.1)', barOk: '#66bb6a', barFail: '#ef5350' },
+                css: `
+                    body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #4fc3f7; font-weight: 600; font-size: 2em; }
+                    .subtitle { text-align: center; color: #9e9e9e; margin-bottom: 30px; }
+                    .back-link { color: #4fc3f7; }
+                    .theme-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
+                    .theme-btn:hover, .theme-btn.active { background: rgba(79,195,247,0.2); border-color: #4fc3f7; color: #4fc3f7; }
+                    .controls, .visualization { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
+                    .control-group label { color: #4fc3f7; } .unit, .unit-label { color: #888; }
+                    input[type="range"] { background: #333; }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4fc3f7; cursor: pointer; }
+                    .input-group input[type="number"] { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; }
+                    .input-group select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'Inter', sans-serif; }
+                    .results h3, .section-header h3 { color: #4fc3f7; margin-bottom: 12px; border-bottom: 1px solid rgba(79,195,247,0.3); padding-bottom: 8px; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, rgba(79,195,247,0.3) 50%, transparent 100%); }
+                    .example-note { background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.85em; color: #4fc3f7; }
+                    .example-note strong { color: #81c784; }
+                    canvas { background: #0d1421; border: 1px solid rgba(255,255,255,0.1); }
+                    .step-container { background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2); }
+                    .step-number { background: rgba(79,195,247,0.3); color: #4fc3f7; }
+                    .step-title { color: #4fc3f7; }
+                    .utilization-bar { background: rgba(255,255,255,0.1); }
+                `
+            },
+            princess: {
+                name: 'Prinsessa', decorations: ['✨', '💖', '⭐', '🌸', '💕'],
+                colors: { accent: '#d4699e', text: '#5a4a6a', textMuted: '#9b7aa9', total: '#9b59b6', canvasBg: '#fff5fa',
+                    wood: '#c48a9f', woodLight: '#dda0b8', woodDark: '#a87088', ok: '#ab47bc', fail: '#e91e8c',
+                    stepBg: 'rgba(212,105,158,0.08)', stepBorder: '#f5c6e0', stepNum: '#d4699e',
+                    barBg: 'rgba(212,105,158,0.1)', barOk: '#ab47bc', barFail: '#e91e8c' },
+                css: `
+                    body { font-family: 'Quicksand', sans-serif; background: linear-gradient(135deg, #ffeef8 0%, #e8d5f9 100%); color: #5a4a6a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #d4699e; font-family: 'Pacifico', cursive; font-size: 2.5em; }
+                    .subtitle { text-align: center; color: #9b7aa9; margin-bottom: 30px; }
+                    .back-link { color: #d4699e; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff5fa 100%); border: 2px solid #f5c6e0; color: #b87a9e; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,240,250,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #f5c6e0; }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,240,255,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #e0c6f5; }
+                    .control-group label { color: #c46a9e; } .unit, .unit-label { color: #b89ac4; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd6eb 0%, #e8c6f5 100%); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); cursor: pointer; border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: #fff; border: 2px solid #f5c6e0; border-radius: 15px; color: #8b6a9e; font-family: 'Quicksand', sans-serif; }
+                    .input-group select { background: #fff; border: 2px solid #f5c6e0; border-radius: 15px; color: #8b6a9e; font-family: 'Quicksand', sans-serif; }
+                    .results h3, .section-header h3 { color: #c46a9e; margin-bottom: 12px; border-bottom: 2px dashed #f5c6e0; padding-bottom: 8px; font-family: 'Pacifico', cursive; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #f5c6e0 50%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff0f7 0%, #ffe8f5 100%); border: 2px dashed #f5a8c8; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #b87a9e; }
+                    .example-note strong { color: #d46a9e; }
+                    canvas { background: linear-gradient(180deg, #fff5fa 0%, #f8f0ff 100%); border: 2px solid #f0d6eb; }
+                    .step-container { background: rgba(212,105,158,0.08); border: 2px solid #f5c6e0; }
+                    .step-number { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); color: #fff; }
+                    .step-title { color: #c46a9e; font-family: 'Pacifico', cursive; }
+                    .utilization-bar { background: rgba(212,105,158,0.1); }
+                `
+            },
+            cats: {
+                name: 'Katter', decorations: ['🐱', '🐾', '🐟', '🧶', '😺'],
+                colors: { accent: '#ff7744', text: '#4a4a4a', textMuted: '#777', total: '#66bb6a', canvasBg: '#fffaf5',
+                    wood: '#ff9966', woodLight: '#ffb088', woodDark: '#e07840', ok: '#66bb6a', fail: '#e53935',
+                    stepBg: 'rgba(255,120,70,0.06)', stepBorder: '#ffd4b8', stepNum: '#ff7744',
+                    barBg: 'rgba(255,120,70,0.1)', barOk: '#66bb6a', barFail: '#e53935' },
+                css: `
+                    body { font-family: 'Comic Neue', cursive; background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%); color: #4a4a4a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #ff7744; font-size: 2.3em; font-weight: 700; }
+                    h1::before { content: '😺 '; } h1::after { content: ' 😺'; }
+                    .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+                    .back-link { color: #ff7744; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff8f0 100%); border: 2px solid #ffd4b8; color: #ff9966; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #ffd4b8; }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,255,248,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #b8e0d2; }
+                    .control-group label { color: #ff7744; font-weight: 700; } .unit, .unit-label { color: #aaa; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd4b8 0%, #b8e0d2 100%); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); cursor: pointer; border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: #fff; border: 2px solid #ffd4b8; border-radius: 15px; color: #666; font-family: 'Comic Neue', cursive; }
+                    .input-group select { background: #fff; border: 2px solid #ffd4b8; border-radius: 15px; color: #666; font-family: 'Comic Neue', cursive; }
+                    .results h3, .section-header h3 { color: #ff7744; margin-bottom: 12px; border-bottom: 3px dotted #ffd4b8; padding-bottom: 8px; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #ffd4b8 30%, #b8e0d2 70%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff8f0 0%, #fffaf5 100%); border: 3px dotted #ffb088; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #888; }
+                    .example-note strong { color: #ff7744; }
+                    canvas { background: linear-gradient(180deg, #fffaf5 0%, #f5fff8 100%); border: 3px solid #ffd4b8; }
+                    .step-container { background: rgba(255,120,70,0.06); border: 3px dotted #ffd4b8; }
+                    .step-number { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); color: #fff; }
+                    .step-title { color: #ff7744; }
+                    .utilization-bar { background: rgba(255,120,70,0.1); }
+                    .decoration { animation-name: catBounce; }
+                `
+            }
+        };
+
+        let currentTheme = 'serious';
+        let colors = themes.serious.colors;
+
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            colors = themes[themeName].colors;
+            document.getElementById('theme-styles').textContent = themes[themeName].css;
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === themeName));
+            document.querySelectorAll('.decoration').forEach(el => el.remove());
+            if (themes[themeName].decorations.length > 0) {
+                for (let i = 0; i < 10; i++) {
+                    const dec = document.createElement('div');
+                    dec.className = 'decoration';
+                    if (themeName === 'cats') dec.classList.add('cat-decoration');
+                    dec.textContent = themes[themeName].decorations[Math.floor(Math.random() * themes[themeName].decorations.length)];
+                    dec.style.left = Math.random() * 100 + 'vw'; dec.style.top = Math.random() * 100 + 'vh';
+                    dec.style.animationDelay = Math.random() * 3 + 's'; dec.style.fontSize = (Math.random() * 15 + 12) + 'px';
+                    document.body.appendChild(dec);
+                }
+            }
+            localStorage.setItem('timberCalcTheme', themeName);
+            update();
+        }
+
+        const sliderPairs = [
+            ['beamWidth', 'beamWidthSlider'], ['beamHeight', 'beamHeightSlider'],
+            ['mEd', 'mEdSlider'], ['vEd', 'vEdSlider']
+        ];
+        sliderPairs.forEach(([numId, sliderId]) => {
+            const num = document.getElementById(numId);
+            const slider = document.getElementById(sliderId);
+            num.addEventListener('input', () => { slider.value = num.value; update(); });
+            slider.addEventListener('input', () => { num.value = slider.value; update(); });
+        });
+        ['timberClass', 'climateClass', 'loadDuration', 'exposed'].forEach(id => {
+            document.getElementById(id).addEventListener('change', update);
+        });
+
+        function getKh(h, type) {
+            if (type === 'C') {
+                if (h < 150) return Math.min(Math.pow(150 / h, 0.2), 1.3);
+                return 1.0;
+            } else {
+                if (h <= 231) return 1.1;
+                if (h < 600) return Math.pow(600 / h, 0.1);
+                return 1.0;
+            }
+        }
+
+        function update() {
+            const cls = document.getElementById('timberClass').value;
+            const climate = document.getElementById('climateClass').value;
+            const duration = document.getElementById('loadDuration').value;
+            const b = parseFloat(document.getElementById('beamWidth').value);
+            const h = parseFloat(document.getElementById('beamHeight').value);
+            const mEd = parseFloat(document.getElementById('mEd').value);
+            const vEd = parseFloat(document.getElementById('vEd').value);
+            const exposed = document.getElementById('exposed').value;
+
+            const td = timberData[cls];
+            const type = td.type;
+            const kmod = kmodTable[type][climate][duration];
+            const gm = gammaM[type];
+            const kh = getKh(h, type);
+
+            // Step 4: Design strengths
+            const fmd = (kmod * td.fmk / gm) * kh;
+            const fvd = kmod * td.fvk / gm;
+
+            // Step 5: Moment capacity
+            const W = b * h * h / 6; // mm³
+            const Wm3 = W / 1e9; // m³ -> convert to kNm
+            const MRd = fmd * W / 1e6; // kNm (fmd in MPa = N/mm², W in mm³ → N·mm → /1e6 = kNm)
+
+            // Step 6: Shear capacity
+            const kcr = exposed === 'yes' ? 0.67 : (td.fvk >= 3 ? 3.0 / td.fvk : 1.0);
+            const beff = b * kcr;
+            const Aeff = beff * h;
+            const VRd = Aeff * fvd / 1.5 / 1000; // kN
+
+            const momentUtil = (mEd / MRd) * 100;
+            const shearUtil = (vEd / VRd) * 100;
+
+            drawCrossSection(b, h);
+            renderSteps({ cls, type, climate, duration, kmod, gm, kh, fmd, fvd, b, h, W, MRd, VRd, mEd, vEd, momentUtil, shearUtil, kcr, beff, Aeff, td });
+        }
+
+        function drawCrossSection(b, h) {
+            const canvas = document.getElementById('crossSection');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const maxW = canvas.width * 0.3;
+            const maxH = canvas.height - 40;
+            const scale = Math.min(maxW / b, maxH / h);
+            const drawW = b * scale;
+            const drawH = h * scale;
+            const x = canvas.width / 2 - drawW / 2;
+            const y = (canvas.height - drawH) / 2;
+
+            // Wood fill
+            const grad = ctx.createLinearGradient(x, y, x + drawW, y);
+            grad.addColorStop(0, colors.woodLight);
+            grad.addColorStop(0.5, colors.wood);
+            grad.addColorStop(1, colors.woodDark);
+            ctx.fillStyle = grad;
+            ctx.fillRect(x, y, drawW, drawH);
+
+            // Grain
+            ctx.strokeStyle = colors.woodDark + '60';
+            ctx.lineWidth = 1;
+            for (let gx = x + 5; gx < x + drawW; gx += 8) {
+                ctx.beginPath(); ctx.moveTo(gx, y + 3); ctx.lineTo(gx, y + drawH - 3); ctx.stroke();
+            }
+
+            // Outline
+            ctx.strokeStyle = colors.accent;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, drawW, drawH);
+
+            // Dimensions
+            ctx.fillStyle = colors.accent;
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(b + ' mm', canvas.width / 2, y + drawH + 20);
+
+            ctx.save();
+            ctx.translate(x - 15, y + drawH / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(h + ' mm', 0, 0);
+            ctx.restore();
+
+            // Title
+            ctx.fillStyle = colors.accent;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('Tvarsnitt ' + b + 'x' + h + ' mm', canvas.width / 2, 18);
+        }
+
+        function renderSteps(d) {
+            const container = document.getElementById('stepsContainer');
+            const okColor = colors.ok;
+            const failColor = colors.fail;
+
+            container.innerHTML = `
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">1</div><div class="step-title">Bestam k<sub>mod</sub></div></div>
+                    <div>Material: <strong>${d.cls}</strong> (${d.type === 'C' ? 'Konstruktionsvirke' : 'Limtra'})</div>
+                    <div>Klimatklass: <strong>${d.climate}</strong>, Lastvaraktighet: <strong>${d.duration}</strong></div>
+                    <div style="margin-top:6px;font-size:1.1em;"><strong>k<sub>mod</sub> = ${d.kmod.toFixed(2)}</strong></div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">2</div><div class="step-title">Bestam γ<sub>m</sub></div></div>
+                    <div>${d.type === 'C' ? 'Konstruktionsvirke' : 'Limtra'}: <strong>γ<sub>m</sub> = ${d.gm}</strong></div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">3</div><div class="step-title">Bestam k<sub>h</sub> (storlekseffekt)</div></div>
+                    <div>h = ${d.h} mm ${d.type === 'C' ? (d.h < 150 ? '< 150 mm → k_h = min((150/h)^0.2, 1.3)' : '≥ 150 mm → k_h = 1.0') : (d.h <= 231 ? '≤ 231 mm → k_h = 1.1' : d.h < 600 ? '< 600 mm → k_h = (600/h)^0.1' : '≥ 600 mm → k_h = 1.0')}</div>
+                    <div style="margin-top:6px;font-size:1.1em;"><strong>k<sub>h</sub> = ${d.kh.toFixed(3)}</strong></div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">4</div><div class="step-title">Rakna f<sub>m,d</sub> och f<sub>v,d</sub></div></div>
+                    <div>f<sub>m,d</sub> = (k<sub>mod</sub> · f<sub>mk</sub> / γ<sub>m</sub>) · k<sub>h</sub> = (${d.kmod.toFixed(2)} · ${d.td.fmk} / ${d.gm}) · ${d.kh.toFixed(3)}</div>
+                    <div style="font-size:1.1em;"><strong>f<sub>m,d</sub> = ${d.fmd.toFixed(2)} MPa</strong></div>
+                    <div style="margin-top:6px;">f<sub>v,d</sub> = k<sub>mod</sub> · f<sub>vk</sub> / γ<sub>m</sub> = ${d.kmod.toFixed(2)} · ${d.td.fvk} / ${d.gm}</div>
+                    <div style="font-size:1.1em;"><strong>f<sub>v,d</sub> = ${d.fvd.toFixed(2)} MPa</strong></div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">5</div><div class="step-title">Kontrollera moment</div></div>
+                    <div>W = b·h²/6 = ${d.b}·${d.h}²/6 = <strong>${(d.W / 1000).toFixed(0)} · 10³ mm³</strong></div>
+                    <div>M<sub>Rd</sub> = f<sub>m,d</sub> · W = ${d.fmd.toFixed(2)} · ${(d.W / 1e6).toFixed(4)} = <strong>${d.MRd.toFixed(2)} kNm</strong></div>
+                    <div style="margin-top:8px;">M<sub>Ed</sub> / M<sub>Rd</sub> = ${d.mEd.toFixed(1)} / ${d.MRd.toFixed(2)} = <strong>${d.momentUtil.toFixed(1)}%</strong>
+                    <span class="status-badge ${d.momentUtil <= 100 ? 'status-ok' : 'status-fail'}">${d.momentUtil <= 100 ? 'OK' : 'EJ OK'}</span></div>
+                    <div class="utilization-bar" style="background:${colors.barBg};">
+                        <div class="utilization-fill" style="width:${Math.min(d.momentUtil, 100)}%; background:${d.momentUtil <= 100 ? colors.barOk : colors.barFail};"></div>
+                        <span class="utilization-text" style="color:${colors.text};">${d.momentUtil.toFixed(1)}%</span>
+                    </div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">6</div><div class="step-title">Kontrollera tvarkraft</div></div>
+                    <div>k<sub>cr</sub> = ${d.kcr.toFixed(2)}, b<sub>eff</sub> = b·k<sub>cr</sub> = ${d.b}·${d.kcr.toFixed(2)} = <strong>${d.beff.toFixed(1)} mm</strong></div>
+                    <div>A<sub>eff</sub> = b<sub>eff</sub>·h = ${d.beff.toFixed(1)}·${d.h} = <strong>${d.Aeff.toFixed(0)} mm²</strong></div>
+                    <div>V<sub>Rd</sub> = A<sub>eff</sub>·f<sub>v,d</sub> / 1.5 = <strong>${d.VRd.toFixed(2)} kN</strong></div>
+                    <div style="margin-top:8px;">V<sub>Ed</sub> / V<sub>Rd</sub> = ${d.vEd.toFixed(1)} / ${d.VRd.toFixed(2)} = <strong>${d.shearUtil.toFixed(1)}%</strong>
+                    <span class="status-badge ${d.shearUtil <= 100 ? 'status-ok' : 'status-fail'}">${d.shearUtil <= 100 ? 'OK' : 'EJ OK'}</span></div>
+                    <div class="utilization-bar" style="background:${colors.barBg};">
+                        <div class="utilization-fill" style="width:${Math.min(d.shearUtil, 100)}%; background:${d.shearUtil <= 100 ? colors.barOk : colors.barFail};"></div>
+                        <span class="utilization-text" style="color:${colors.text};">${d.shearUtil.toFixed(1)}%</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.visualization');
+            if (!container) return;
+            document.getElementById('crossSection').width = container.clientWidth - 50;
+            update();
+        }
+
+        const savedTheme = localStorage.getItem('timberCalcTheme') || 'serious';
+        setTheme(savedTheme);
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>

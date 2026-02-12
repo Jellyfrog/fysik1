@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balkberäknare - V & M Diagram</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>📐</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style id="theme-styles"></style>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; padding: 20px; transition: background 0.5s ease, color 0.5s ease; overflow-x: hidden; }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+        .back-link { display: inline-block; margin-bottom: 15px; text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .theme-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .theme-btn { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+        .main-content { display: grid; grid-template-columns: 380px 1fr; gap: 30px; }
+        @media (max-width: 900px) { .main-content { grid-template-columns: 1fr; } }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .input-group { display: flex; align-items: center; gap: 10px; }
+        .input-group input[type="number"] { width: 80px; padding: 10px; font-size: 1em; text-align: right; font-weight: 600; }
+        .input-group .unit-label { font-size: 0.9em; min-width: 50px; }
+        input[type="range"] { flex: 1; height: 10px; border-radius: 10px; outline: none; -webkit-appearance: none; }
+        .canvas-container { display: flex; flex-direction: column; gap: 10px; }
+        canvas { border-radius: 20px; width: 100%; }
+        .result-row { display: flex; justify-content: space-between; padding: 8px 0; }
+        .preset-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .section-divider { height: 2px; margin: 20px 0; }
+        .decoration { position: fixed; pointer-events: none; animation: float 3s ease-in-out infinite; z-index: 0; }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 1; } }
+        @keyframes catBounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
+        .cat-decoration { animation: catBounce 2s ease-in-out infinite; }
+        .rules-box { margin-top: 15px; padding: 15px; border-radius: 10px; font-size: 0.85em; line-height: 1.6; }
+        .rules-box h4 { margin-bottom: 8px; }
+        .rules-box ol { padding-left: 20px; }
+        .rules-box li { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link" id="backLink">← Tillbaka</a>
+        <div class="theme-selector">
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
+            <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
+        </div>
+        <h1 id="main-title">Balkberaknare</h1>
+        <p class="subtitle">Interaktiv berakning av tvarkraft (V) och moment (M) diagram</p>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="example-note">
+                    <strong>Teckenkonvention:</strong><br>
+                    Positiv V: uppat (vanster om snitt)<br>
+                    Positivt M: underdragen (balk bojer nedat)<br>
+                    Lastkombination: 1,2*G + 1,5*Q
+                </div>
+
+                <div class="section-header"><h3>Belastningsfall</h3></div>
+                <div class="preset-buttons">
+                    <button class="preset-btn active" id="presetCenter">Punktlast mitt</button>
+                    <button class="preset-btn" id="presetOffset">Punktlast offset</button>
+                    <button class="preset-btn" id="presetDistributed">Utbredd last</button>
+                    <button class="preset-btn" id="presetCantileverP">Konsol punktlast</button>
+                    <button class="preset-btn" id="presetCantileverQ">Konsol utbredd</button>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Parametrar</h3></div>
+
+                <div class="control-group">
+                    <label>Balklangd (L) <span class="unit">[m]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="beamLength" min="1" max="20" step="0.5" value="6">
+                        <span class="unit-label">m</span>
+                        <input type="range" id="beamLengthSlider" min="1" max="20" step="0.5" value="6">
+                    </div>
+                </div>
+
+                <div class="control-group" id="pointLoadGroup">
+                    <label>Punktlast (P) <span class="unit">[kN]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="pointLoad" min="0" max="100" step="1" value="10">
+                        <span class="unit-label">kN</span>
+                        <input type="range" id="pointLoadSlider" min="0" max="100" step="1" value="10">
+                    </div>
+                </div>
+
+                <div class="control-group" id="loadPositionGroup">
+                    <label>Lastposition (a) <span class="unit">[m fran A]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="loadPosition" min="0" max="20" step="0.1" value="3">
+                        <span class="unit-label">m</span>
+                        <input type="range" id="loadPositionSlider" min="0" max="20" step="0.1" value="3">
+                    </div>
+                </div>
+
+                <div class="control-group" id="distLoadGroup" style="display:none;">
+                    <label>Utbredd last (q) <span class="unit">[kN/m]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="distLoad" min="0" max="50" step="0.5" value="5">
+                        <span class="unit-label">kN/m</span>
+                        <input type="range" id="distLoadSlider" min="0" max="50" step="0.5" value="5">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Styvhet (EI) <span class="unit">[kNm²]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="stiffness" min="100" max="50000" step="100" value="5000">
+                        <span class="unit-label">kNm²</span>
+                        <input type="range" id="stiffnessSlider" min="100" max="50000" step="100" value="5000">
+                    </div>
+                </div>
+
+                <div class="results">
+                    <h3>Resultat</h3>
+                    <div class="result-row">
+                        <span class="result-label">R<sub>A</sub>:</span>
+                        <span class="result-value" id="reactionA">5.000 kN</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">R<sub>B</sub>:</span>
+                        <span class="result-value" id="reactionB">5.000 kN</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">V<sub>max</sub>:</span>
+                        <span class="result-value" id="maxShear">5.000 kN</span>
+                    </div>
+                    <div class="result-row total-row">
+                        <span class="result-label">M<sub>max</sub>:</span>
+                        <span class="result-value total" id="maxMoment">15.000 kNm</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">v<sub>max</sub> (nedböjning):</span>
+                        <span class="result-value" id="maxDeflection">0.000 mm</span>
+                    </div>
+
+                    <div class="formula-box" id="formulaBox"></div>
+                </div>
+
+                <div class="rules-box" id="conceptsBox">
+                    <h4>Vad ar krafterna?</h4>
+                    <p><strong>Tvarkraft V (skjuvkraft)</strong> — Den inre kraft som verkar vinkelratt mot balkens langdaxel. Tankt dig att du klipper balken med en sax — tvarkraften ar den kraft som forsaker skjuva de tva delarna fran varandra vertikalt. Vid stod och punktlaster gor V ett "hopp".</p>
+                    <p style="margin-top:8px;"><strong>Moment M (bojmoment)</strong> — Det inre momentet som forsaker boja balken. Positivt moment gor att balken bojer nedat (underdragen = dragning i underkant). Momentet ar storst dar tvarkraften byter tecken (gar genom noll).</p>
+                    <p style="margin-top:8px;"><strong>Normalkraft N</strong> — Kraft langs balkens langdaxel (tryck eller drag). For enkla balkar med vertikala laster ar N = 0.</p>
+                    <p style="margin-top:8px;"><strong>Nedböjning v</strong> — Hur mycket balken bojer sig. Maximal nedbojning uppstar oftast i mitten. Beror pa styvheten EI — ju hogre EI, desto mindre nedbojning.</p>
+                    <p style="margin-top:8px;"><strong>Stodreaktioner R<sub>A</sub> och R<sub>B</sub></strong> — Krafterna som stoden utover pa balken for att halla den i jamvikt. Bestams med jamviktsekvationerna ΣF=0 och ΣM=0.</p>
+                </div>
+
+                <div class="rules-box" id="rulesBox" style="margin-top:10px;">
+                    <h4>5 regler for N, V, M diagram</h4>
+                    <ol>
+                        <li><strong>M far max varde nar V byter tecken</strong> — Momentet ar som storst precis dar tvarkraften gar fran negativt till positivt (eller tvartom), dvs dar V korsar nolllinjen.</li>
+                        <li><strong>Mellan 2 punktkrafter ar V konstant och M linjart</strong> — Nar ingen utbredd last verkar forblir V oforandrad, medan M okar eller minskar linjart.</li>
+                        <li><strong>Med utbredd last ar V linjar och M parabolisk</strong> — En linjelast gor att V andras linjart och M foljer en parabelformad kurva.</li>
+                        <li><strong>M ar noll vid fria balkandar</strong> — Balkandar med enkelstod eller rullstod kan inte ta emot moment, sa M = 0 dar.</li>
+                        <li><strong>Vid punkt- och stodkrafter gor V ett hopp</strong> — Hoppets storlek ar lika med kraftens varde. Detta galler aven for stodreaktioner.</li>
+                    </ol>
+                </div>
+
+                <div class="rules-box" id="loadComboBox" style="margin-top:10px;">
+                    <h4>Lastkombination (brottgranstillstandet)</h4>
+                    <p><strong>1,2 · G + 1,5 · Q</strong></p>
+                    <p style="margin-top:6px;"><strong>G</strong> = permanent last (egentyngd av konstruktionen)</p>
+                    <p><strong>Q</strong> = variabel last (snolast, nyttig last, vindlast)</p>
+                    <p style="margin-top:6px;">Faktorerna 1,2 och 1,5 ar partialkoefficienter som ger sakerhetsmarginal. Permanenta laster har lagre faktor eftersom de ar mer forut sagbara.</p>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="canvas-container">
+                    <canvas id="beamCanvas" width="800" height="180"></canvas>
+                    <canvas id="shearCanvas" width="800" height="180"></canvas>
+                    <canvas id="momentCanvas" width="800" height="180"></canvas>
+                    <canvas id="deflectionCanvas" width="800" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            serious: {
+                name: 'Serios',
+                favicon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>📐</text></svg>",
+                decorations: [],
+                colors: {
+                    beam: '#8d6e63', load: '#ef5350', shearPos: '#42a5f5', shearNeg: '#1565c0',
+                    momentPos: '#66bb6a', momentNeg: '#2e7d32', deflection: '#ff9800',
+                    support: '#9e9e9e', text: '#e0e0e0', textMuted: '#9e9e9e',
+                    accent: '#4fc3f7', accentDark: '#0288d1', background: '#1a1a2e',
+                    surface: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',
+                    total: '#81c784', canvasBg: '#0d1421', grid: 'rgba(255,255,255,0.06)',
+                    axis: 'rgba(255,255,255,0.3)', reaction: '#ffd54f'
+                },
+                css: `
+                    body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #4fc3f7; font-weight: 600; font-size: 2em; }
+                    .subtitle { text-align: center; color: #9e9e9e; margin-bottom: 30px; }
+                    .back-link { color: #4fc3f7; }
+                    .theme-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
+                    .theme-btn:hover, .theme-btn.active { background: rgba(79,195,247,0.2); border-color: #4fc3f7; color: #4fc3f7; }
+                    .controls, .visualization { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
+                    .control-group label { color: #4fc3f7; }
+                    .unit, .unit-label { color: #888; }
+                    input[type="range"] { background: #333; }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4fc3f7; cursor: pointer; box-shadow: 0 0 10px rgba(79,195,247,0.5); }
+                    .input-group input[type="number"] { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; }
+                    .input-group input[type="number"]:focus { outline: none; border-color: #4fc3f7; }
+                    .results { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 20px; margin-top: 20px; }
+                    .results h3, .section-header h3 { color: #4fc3f7; margin-bottom: 15px; border-bottom: 1px solid rgba(79,195,247,0.3); padding-bottom: 10px; }
+                    .result-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+                    .result-label { color: #aaa; }
+                    .result-value { color: #4fc3f7; font-weight: 700; font-family: monospace; }
+                    .result-value.total { color: #81c784; font-size: 1.2em; }
+                    .total-row { margin-top: 10px; padding-top: 15px; border-top: 2px solid rgba(79,195,247,0.3); }
+                    .formula-box { background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3); border-radius: 8px; padding: 15px; margin-top: 15px; font-family: monospace; font-size: 0.9em; line-height: 1.8; }
+                    .formula-box .highlight { color: #81c784; font-weight: 700; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, rgba(79,195,247,0.3) 50%, transparent 100%); }
+                    .example-note { background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.85em; color: #4fc3f7; }
+                    .example-note strong { color: #81c784; }
+                    .preset-btn { padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #aaa; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.3s; }
+                    .preset-btn:hover { background: rgba(255,255,255,0.1); }
+                    .preset-btn.active { background: rgba(79,195,247,0.2); border-color: #4fc3f7; color: #4fc3f7; }
+                    canvas { background: #0d1421; border: 1px solid rgba(255,255,255,0.1); }
+                    .rules-box { background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2); color: #b0bec5; }
+                    .rules-box h4 { color: #4fc3f7; }
+                `
+            },
+            princess: {
+                name: 'Prinsessa',
+                favicon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>👑</text></svg>",
+                decorations: ['✨', '💖', '⭐', '🌸', '💕', '✿'],
+                colors: {
+                    beam: '#c48a9f', load: '#e91e8c', shearPos: '#ab47bc', shearNeg: '#7b1fa2',
+                    momentPos: '#f06292', momentNeg: '#c2185b', deflection: '#ce93d8',
+                    support: '#b87a9e', text: '#5a4a6a', textMuted: '#9b7aa9',
+                    accent: '#d4699e', accentDark: '#c46a9e', background: '#ffeef8',
+                    surface: 'rgba(255,255,255,0.9)', border: '#f5c6e0',
+                    total: '#9b59b6', canvasBg: '#fff5fa', grid: 'rgba(200,100,160,0.08)',
+                    axis: 'rgba(200,100,160,0.3)', reaction: '#e040fb'
+                },
+                css: `
+                    body { font-family: 'Quicksand', sans-serif; background: linear-gradient(135deg, #ffeef8 0%, #f8e1f4 30%, #e8d5f9 70%, #dcd0ff 100%); color: #5a4a6a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #d4699e; font-family: 'Pacifico', cursive; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(212, 105, 158, 0.3); }
+                    .subtitle { text-align: center; color: #9b7aa9; margin-bottom: 30px; font-weight: 500; }
+                    .back-link { color: #d4699e; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff5fa 100%); border: 2px solid #f5c6e0; color: #b87a9e; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,240,250,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #f5c6e0; box-shadow: 0 10px 40px rgba(212, 105, 158, 0.2); }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,240,255,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #e0c6f5; box-shadow: 0 10px 40px rgba(180, 130, 200, 0.2); }
+                    .control-group label { color: #c46a9e; }
+                    .unit, .unit-label { color: #b89ac4; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd6eb 0%, #e8c6f5 100%); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); cursor: pointer; box-shadow: 0 4px 15px rgba(212, 105, 158, 0.4); border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: linear-gradient(145deg, #fff 0%, #fff8fc 100%); border: 2px solid #f5c6e0; border-radius: 15px; color: #8b6a9e; font-family: 'Quicksand', sans-serif; }
+                    .input-group input[type="number"]:focus { outline: none; border-color: #d46a9e; box-shadow: 0 0 15px rgba(212, 105, 158, 0.3); }
+                    .results { background: linear-gradient(145deg, #fff0f7 0%, #f8e8ff 100%); border-radius: 20px; padding: 20px; margin-top: 20px; border: 2px solid #f5d0e8; }
+                    .results h3, .section-header h3 { color: #c46a9e; margin-bottom: 15px; border-bottom: 2px dashed #f5c6e0; padding-bottom: 10px; font-family: 'Pacifico', cursive; }
+                    .result-row { border-bottom: 1px dashed #f0d6eb; }
+                    .result-label { color: #9b7aa9; }
+                    .result-value { color: #c46a9e; font-weight: 700; }
+                    .result-value.total { color: #9b59b6; font-size: 1.2em; }
+                    .total-row { margin-top: 10px; padding-top: 15px; border-top: 2px dashed #e8b8d8; }
+                    .formula-box { background: linear-gradient(145deg, #fff5fa 0%, #f0e8ff 100%); border: 2px dashed #dbb8e8; border-radius: 15px; padding: 15px; margin-top: 15px; font-size: 0.9em; line-height: 1.8; }
+                    .formula-box .highlight { color: #9b59b6; font-weight: 700; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #f5c6e0 50%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff0f7 0%, #ffe8f5 100%); border: 2px dashed #f5a8c8; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #b87a9e; }
+                    .example-note strong { color: #d46a9e; }
+                    .preset-btn { padding: 12px 20px; background: linear-gradient(145deg, #fff 0%, #fff5fa 100%); border: 2px solid #f5c6e0; border-radius: 25px; color: #b87a9e; cursor: pointer; font-family: 'Quicksand', sans-serif; font-weight: 600; transition: all 0.3s; }
+                    .preset-btn:hover { background: linear-gradient(145deg, #fff5fa 0%, #ffe8f5 100%); transform: translateY(-2px); }
+                    .preset-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; box-shadow: 0 5px 20px rgba(212, 105, 158, 0.4); }
+                    canvas { background: linear-gradient(180deg, #fff5fa 0%, #f8f0ff 100%); border: 2px solid #f0d6eb; }
+                    .rules-box { background: linear-gradient(145deg, #fff0f7 0%, #ffe8f5 100%); border: 2px dashed #f5a8c8; color: #9b7aa9; }
+                    .rules-box h4 { color: #c46a9e; font-family: 'Pacifico', cursive; }
+                `
+            },
+            cats: {
+                name: 'Katter',
+                favicon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🐱</text></svg>",
+                decorations: ['🐱', '🐾', '🐟', '🧶', '😺', '🐈'],
+                colors: {
+                    beam: '#ff9966', load: '#e53935', shearPos: '#42a5f5', shearNeg: '#1565c0',
+                    momentPos: '#66bb6a', momentNeg: '#2e7d32', deflection: '#ff9800',
+                    support: '#aaa', text: '#4a4a4a', textMuted: '#777',
+                    accent: '#ff7744', accentDark: '#e05500', background: '#fff8f0',
+                    surface: 'rgba(255,255,255,0.95)', border: '#ffd4b8',
+                    total: '#66bb6a', canvasBg: '#fffaf5', grid: 'rgba(255,120,70,0.06)',
+                    axis: 'rgba(255,120,70,0.3)', reaction: '#ff5722'
+                },
+                css: `
+                    body { font-family: 'Comic Neue', cursive; background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 30%, #ffe8d6 70%, #ffeee0 100%); color: #4a4a4a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #ff7744; font-size: 2.3em; font-weight: 700; }
+                    h1::before { content: '😺 '; } h1::after { content: ' 😺'; }
+                    .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+                    .subtitle::before { content: '🐾 '; } .subtitle::after { content: ' 🐾'; }
+                    .back-link { color: #ff7744; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff8f0 100%); border: 2px solid #ffd4b8; color: #ff9966; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #ffd4b8; box-shadow: 0 10px 40px rgba(255, 150, 100, 0.15); }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,255,248,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #b8e0d2; box-shadow: 0 10px 40px rgba(100, 180, 150, 0.15); }
+                    .control-group label { color: #ff7744; font-weight: 700; }
+                    .unit, .unit-label { color: #aaa; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd4b8 0%, #b8e0d2 100%); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); cursor: pointer; box-shadow: 0 4px 15px rgba(255, 120, 70, 0.4); border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: #fff; border: 2px solid #ffd4b8; border-radius: 15px; color: #666; font-family: 'Comic Neue', cursive; }
+                    .input-group input[type="number"]:focus { outline: none; border-color: #ff7744; box-shadow: 0 0 15px rgba(255, 120, 70, 0.3); }
+                    .results { background: linear-gradient(145deg, #fff8f0 0%, #f0fff8 100%); border-radius: 20px; padding: 20px; margin-top: 20px; border: 2px solid #ffd4b8; }
+                    .results h3 { color: #ff7744; margin-bottom: 15px; border-bottom: 3px dotted #ffd4b8; padding-bottom: 10px; }
+                    .results h3::before { content: '🐱 '; }
+                    .section-header h3 { color: #ff7744; margin-bottom: 15px; }
+                    .section-header h3::after { content: ' 🐾'; }
+                    .result-row { border-bottom: 2px dotted #ffe8d6; }
+                    .result-label { color: #888; }
+                    .result-value { color: #ff7744; font-weight: 700; }
+                    .result-value.total { color: #66bb6a; font-size: 1.2em; }
+                    .total-row { margin-top: 10px; padding-top: 15px; border-top: 3px dotted #b8e0d2; }
+                    .formula-box { background: linear-gradient(145deg, #fff8f0 0%, #f0fff8 100%); border: 3px dotted #ffd4b8; border-radius: 15px; padding: 15px; margin-top: 15px; font-size: 0.9em; line-height: 1.8; }
+                    .formula-box .highlight { color: #66bb6a; font-weight: 700; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #ffd4b8 30%, #b8e0d2 70%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff8f0 0%, #fffaf5 100%); border: 3px dotted #ffb088; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #888; }
+                    .example-note::before { content: '🐟 '; }
+                    .example-note strong { color: #ff7744; }
+                    .preset-btn { padding: 12px 20px; background: linear-gradient(145deg, #fff 0%, #fff8f0 100%); border: 2px solid #ffd4b8; border-radius: 25px; color: #ff9966; cursor: pointer; font-family: 'Comic Neue', cursive; font-weight: 700; transition: all 0.3s; }
+                    .preset-btn:hover { background: linear-gradient(145deg, #fff8f0 0%, #ffefe0 100%); transform: translateY(-2px) rotate(-1deg); }
+                    .preset-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; box-shadow: 0 5px 20px rgba(255, 120, 70, 0.4); }
+                    canvas { background: linear-gradient(180deg, #fffaf5 0%, #f5fff8 100%); border: 3px solid #ffd4b8; }
+                    .rules-box { background: linear-gradient(145deg, #fff8f0 0%, #fffaf5 100%); border: 3px dotted #ffb088; color: #888; }
+                    .rules-box h4 { color: #ff7744; }
+                    .decoration { animation-name: catBounce; }
+                `
+            }
+        };
+
+        let currentTheme = 'serious';
+        let colors = themes.serious.colors;
+        let currentCase = 'center'; // center, offset, distributed, cantileverP, cantileverQ
+
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            const theme = themes[themeName];
+            colors = theme.colors;
+            document.getElementById('favicon').href = theme.favicon;
+            document.getElementById('theme-styles').textContent = theme.css;
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === themeName);
+            });
+            document.querySelectorAll('.decoration').forEach(el => el.remove());
+            if (theme.decorations.length > 0) {
+                for (let i = 0; i < 12; i++) {
+                    const dec = document.createElement('div');
+                    dec.className = 'decoration';
+                    if (themeName === 'cats') dec.classList.add('cat-decoration');
+                    dec.textContent = theme.decorations[Math.floor(Math.random() * theme.decorations.length)];
+                    dec.style.left = Math.random() * 100 + 'vw';
+                    dec.style.top = Math.random() * 100 + 'vh';
+                    dec.style.animationDelay = Math.random() * 3 + 's';
+                    dec.style.fontSize = (Math.random() * 15 + 12) + 'px';
+                    document.body.appendChild(dec);
+                }
+            }
+            localStorage.setItem('beamCalcTheme', themeName);
+            update();
+        }
+
+        const inputPairs = {
+            beamLength: { num: document.getElementById('beamLength'), slider: document.getElementById('beamLengthSlider') },
+            pointLoad: { num: document.getElementById('pointLoad'), slider: document.getElementById('pointLoadSlider') },
+            loadPosition: { num: document.getElementById('loadPosition'), slider: document.getElementById('loadPositionSlider') },
+            distLoad: { num: document.getElementById('distLoad'), slider: document.getElementById('distLoadSlider') },
+            stiffness: { num: document.getElementById('stiffness'), slider: document.getElementById('stiffnessSlider') }
+        };
+
+        Object.keys(inputPairs).forEach(key => {
+            const pair = inputPairs[key];
+            pair.num.addEventListener('input', () => { pair.slider.value = pair.num.value; update(); });
+            pair.slider.addEventListener('input', () => { pair.num.value = pair.slider.value; update(); });
+        });
+
+        const presets = {
+            presetCenter: { case: 'center', beamLength: 6, pointLoad: 10, loadPosition: 3, distLoad: 5, stiffness: 5000 },
+            presetOffset: { case: 'offset', beamLength: 6, pointLoad: 10, loadPosition: 2, distLoad: 5, stiffness: 5000 },
+            presetDistributed: { case: 'distributed', beamLength: 6, pointLoad: 10, loadPosition: 3, distLoad: 5, stiffness: 5000 },
+            presetCantileverP: { case: 'cantileverP', beamLength: 4, pointLoad: 10, loadPosition: 4, distLoad: 5, stiffness: 5000 },
+            presetCantileverQ: { case: 'cantileverQ', beamLength: 4, pointLoad: 10, loadPosition: 4, distLoad: 5, stiffness: 5000 }
+        };
+
+        Object.keys(presets).forEach(id => {
+            document.getElementById(id).addEventListener('click', () => {
+                const p = presets[id];
+                currentCase = p.case;
+                Object.keys(p).forEach(key => {
+                    if (key !== 'case' && inputPairs[key]) {
+                        inputPairs[key].num.value = p[key];
+                        inputPairs[key].slider.value = p[key];
+                    }
+                });
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+                updateVisibility();
+                update();
+            });
+        });
+
+        function updateVisibility() {
+            const isPoint = currentCase === 'center' || currentCase === 'offset' || currentCase === 'cantileverP';
+            const isDist = currentCase === 'distributed' || currentCase === 'cantileverQ';
+            document.getElementById('pointLoadGroup').style.display = isPoint ? '' : 'none';
+            document.getElementById('loadPositionGroup').style.display = (currentCase === 'offset') ? '' : 'none';
+            document.getElementById('distLoadGroup').style.display = isDist ? '' : 'none';
+        }
+
+        function getValues() {
+            return {
+                L: parseFloat(inputPairs.beamLength.num.value),
+                P: parseFloat(inputPairs.pointLoad.num.value),
+                a: parseFloat(inputPairs.loadPosition.num.value),
+                q: parseFloat(inputPairs.distLoad.num.value),
+                EI: parseFloat(inputPairs.stiffness.num.value)
+            };
+        }
+
+        function calculate(v) {
+            const { L, P, a, q, EI } = v;
+            let RA, RB, MA_fixed = 0;
+            const isCantilever = currentCase === 'cantileverP' || currentCase === 'cantileverQ';
+            const n = 200;
+            const dx = L / n;
+            let Vdata = [], Mdata = [], vData = [];
+
+            if (currentCase === 'center') {
+                RA = P / 2; RB = P / 2;
+                for (let i = 0; i <= n; i++) {
+                    const x = i * dx;
+                    let Vi = RA;
+                    if (x >= L / 2) Vi = RA - P;
+                    let Mi = RA * x;
+                    if (x >= L / 2) Mi = RA * x - P * (x - L / 2);
+                    const xi = x;
+                    let vi = 0;
+                    if (EI > 0) {
+                        vi = -(P * L * L * L / (48 * EI)) * (xi / L) * (3 - 4 * (xi / L) * (xi / L));
+                        if (x > L / 2) {
+                            const xm = L - x;
+                            vi = -(P * L * L * L / (48 * EI)) * (xm / L) * (3 - 4 * (xm / L) * (xm / L));
+                        }
+                    }
+                    Vdata.push(Vi); Mdata.push(Mi); vData.push(vi * 1000);
+                }
+            } else if (currentCase === 'offset') {
+                const aVal = Math.min(a, L);
+                const b = L - aVal;
+                RA = P * b / L; RB = P * aVal / L;
+                for (let i = 0; i <= n; i++) {
+                    const x = i * dx;
+                    let Vi = RA;
+                    if (x >= aVal) Vi = RA - P;
+                    let Mi = RA * x;
+                    if (x >= aVal) Mi = RA * x - P * (x - aVal);
+                    let vi = 0;
+                    if (EI > 0) {
+                        if (x <= aVal) {
+                            vi = -(P * b * x / (6 * L * EI)) * (L * L - b * b - x * x);
+                        } else {
+                            vi = -(P * aVal * (L - x) / (6 * L * EI)) * (2 * L * (L - x) - aVal * aVal - (L - x) * (L - x));
+                        }
+                    }
+                    Vdata.push(Vi); Mdata.push(Mi); vData.push(vi * 1000);
+                }
+            } else if (currentCase === 'distributed') {
+                RA = q * L / 2; RB = q * L / 2;
+                for (let i = 0; i <= n; i++) {
+                    const x = i * dx;
+                    let Vi = RA - q * x;
+                    let Mi = RA * x - q * x * x / 2;
+                    let vi = 0;
+                    if (EI > 0) {
+                        vi = -(q * x / (24 * EI)) * (L * L * L - 2 * L * x * x + x * x * x);
+                    }
+                    Vdata.push(Vi); Mdata.push(Mi); vData.push(vi * 1000);
+                }
+            } else if (currentCase === 'cantileverP') {
+                RA = P; MA_fixed = -P * L; RB = 0;
+                for (let i = 0; i <= n; i++) {
+                    const x = i * dx;
+                    let Vi = P;
+                    let Mi = -P * (L - x);
+                    let vi = 0;
+                    if (EI > 0) {
+                        vi = -(P * (L - x) * (L - x) / (6 * EI)) * (3 * L - (L - x));
+                    }
+                    Vdata.push(Vi); Mdata.push(Mi); vData.push(vi * 1000);
+                }
+            } else if (currentCase === 'cantileverQ') {
+                RA = q * L; MA_fixed = -q * L * L / 2; RB = 0;
+                for (let i = 0; i <= n; i++) {
+                    const x = i * dx;
+                    let Vi = q * (L - x);
+                    let Mi = -q * (L - x) * (L - x) / 2;
+                    let vi = 0;
+                    if (EI > 0) {
+                        vi = -(q / (24 * EI)) * (L - x) * (L - x) * (4 * L * (L - x) - (L - x) * (L - x) - 6 * L * L);
+                        vi = -(q / (24 * EI)) * (x * x * x * x - 4 * L * x * x * x + 6 * L * L * x * x);
+                    }
+                    Vdata.push(Vi); Mdata.push(Mi); vData.push(vi * 1000);
+                }
+            }
+
+            const Vmax = Math.max(...Vdata.map(Math.abs));
+            const Mmax = Math.max(...Mdata.map(Math.abs));
+            const vmax = Math.max(...vData.map(Math.abs));
+
+            return { RA, RB, MA_fixed, Vdata, Mdata, vData, Vmax, Mmax, vmax };
+        }
+
+        function update() {
+            const v = getValues();
+            // Clamp load position
+            if (currentCase === 'offset') {
+                inputPairs.loadPosition.slider.max = v.L;
+                if (v.a > v.L) {
+                    inputPairs.loadPosition.num.value = v.L;
+                    inputPairs.loadPosition.slider.value = v.L;
+                    v.a = v.L;
+                }
+            }
+            const r = calculate(v);
+
+            document.getElementById('reactionA').textContent = r.RA.toFixed(3) + ' kN';
+            document.getElementById('reactionB').textContent = r.RB.toFixed(3) + ' kN';
+            document.getElementById('maxShear').textContent = r.Vmax.toFixed(3) + ' kN';
+            document.getElementById('maxMoment').textContent = r.Mmax.toFixed(3) + ' kNm';
+            document.getElementById('maxDeflection').textContent = r.vmax.toFixed(3) + ' mm';
+
+            let formula = '';
+            if (currentCase === 'center') {
+                formula = `R<sub>A</sub> = R<sub>B</sub> = P/2 = ${v.P}/2 = <span class="highlight">${r.RA.toFixed(3)} kN</span><br>`;
+                formula += `M<sub>max</sub> = P·L/4 = ${v.P}·${v.L}/4 = <span class="highlight">${r.Mmax.toFixed(3)} kNm</span><br>`;
+                formula += `v<sub>max</sub> = P·L³/(48·EI) = <span class="highlight">${r.vmax.toFixed(3)} mm</span>`;
+            } else if (currentCase === 'offset') {
+                const b = v.L - v.a;
+                formula = `R<sub>A</sub> = P·b/L = ${v.P}·${b.toFixed(1)}/${v.L} = <span class="highlight">${r.RA.toFixed(3)} kN</span><br>`;
+                formula += `R<sub>B</sub> = P·a/L = ${v.P}·${v.a}/${v.L} = <span class="highlight">${r.RB.toFixed(3)} kN</span><br>`;
+                formula += `M<sub>max</sub> = P·a·b/L = <span class="highlight">${r.Mmax.toFixed(3)} kNm</span>`;
+            } else if (currentCase === 'distributed') {
+                formula = `R<sub>A</sub> = R<sub>B</sub> = q·L/2 = ${v.q}·${v.L}/2 = <span class="highlight">${r.RA.toFixed(3)} kN</span><br>`;
+                formula += `M<sub>max</sub> = q·L²/8 = ${v.q}·${v.L}²/8 = <span class="highlight">${r.Mmax.toFixed(3)} kNm</span><br>`;
+                formula += `v<sub>max</sub> = 5·q·L⁴/(384·EI) = <span class="highlight">${r.vmax.toFixed(3)} mm</span>`;
+            } else if (currentCase === 'cantileverP') {
+                formula = `R = P = <span class="highlight">${r.RA.toFixed(3)} kN</span><br>`;
+                formula += `M<sub>A</sub> = −P·L = −${v.P}·${v.L} = <span class="highlight">${r.MA_fixed.toFixed(3)} kNm</span><br>`;
+                formula += `v<sub>B</sub> = P·L³/(3·EI) = <span class="highlight">${r.vmax.toFixed(3)} mm</span>`;
+            } else if (currentCase === 'cantileverQ') {
+                formula = `R = q·L = ${v.q}·${v.L} = <span class="highlight">${r.RA.toFixed(3)} kN</span><br>`;
+                formula += `M<sub>A</sub> = −q·L²/2 = <span class="highlight">${r.MA_fixed.toFixed(3)} kNm</span><br>`;
+                formula += `v<sub>B</sub> = q·L⁴/(8·EI) = <span class="highlight">${r.vmax.toFixed(3)} mm</span>`;
+            }
+            document.getElementById('formulaBox').innerHTML = formula;
+
+            drawAll(v, r);
+        }
+
+        function drawAll(v, r) {
+            drawBeam(v, r);
+            drawDiagram(document.getElementById('shearCanvas'), r.Vdata, v.L, 'Tvarkraftdiagram V(x) [kN]', colors.shearPos, colors.shearNeg);
+            drawDiagram(document.getElementById('momentCanvas'), r.Mdata, v.L, 'Momentdiagram M(x) [kNm]', colors.momentPos, colors.momentNeg);
+            drawDiagram(document.getElementById('deflectionCanvas'), r.vData, v.L, 'Nedböjning v(x) [mm]', colors.deflection, colors.deflection);
+        }
+
+        function drawBeam(v, r) {
+            const canvas = document.getElementById('beamCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const margin = { left: 60, right: 40, top: 50, bottom: 40 };
+            const w = canvas.width - margin.left - margin.right;
+            const beamY = margin.top + 40;
+            const isCantilever = currentCase === 'cantileverP' || currentCase === 'cantileverQ';
+
+            // Beam
+            ctx.strokeStyle = colors.beam;
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, beamY);
+            ctx.lineTo(margin.left + w, beamY);
+            ctx.stroke();
+
+            // Supports
+            ctx.fillStyle = colors.support;
+            ctx.strokeStyle = colors.support;
+            ctx.lineWidth = 2;
+
+            if (isCantilever) {
+                // Fixed support at A
+                ctx.fillRect(margin.left - 10, beamY - 20, 10, 40);
+                for (let y = beamY - 20; y < beamY + 20; y += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(margin.left - 10, y);
+                    ctx.lineTo(margin.left - 18, y + 8);
+                    ctx.stroke();
+                }
+            } else {
+                // Pin at A
+                ctx.beginPath();
+                ctx.moveTo(margin.left, beamY + 3);
+                ctx.lineTo(margin.left - 12, beamY + 25);
+                ctx.lineTo(margin.left + 12, beamY + 25);
+                ctx.closePath();
+                ctx.stroke();
+                // Roller at B
+                ctx.beginPath();
+                ctx.moveTo(margin.left + w, beamY + 3);
+                ctx.lineTo(margin.left + w - 12, beamY + 25);
+                ctx.lineTo(margin.left + w + 12, beamY + 25);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(margin.left + w, beamY + 30, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Labels
+            ctx.fillStyle = colors.accent;
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('A', margin.left, beamY + 45);
+            ctx.fillText('B', margin.left + w, beamY + 45);
+
+            // Length dimension
+            ctx.strokeStyle = colors.accent;
+            ctx.lineWidth = 1;
+            const dimY = beamY + 55;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, dimY);
+            ctx.lineTo(margin.left + w, dimY);
+            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(margin.left, dimY - 5); ctx.lineTo(margin.left, dimY + 5); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(margin.left + w, dimY - 5); ctx.lineTo(margin.left + w, dimY + 5); ctx.stroke();
+            ctx.fillText('L = ' + v.L + ' m', margin.left + w / 2, dimY + 15);
+
+            // Loads
+            ctx.fillStyle = colors.load;
+            ctx.strokeStyle = colors.load;
+            ctx.lineWidth = 2;
+
+            if (currentCase === 'center') {
+                const px = margin.left + w / 2;
+                drawArrow(ctx, px, beamY - 50, px, beamY - 5);
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText('P = ' + v.P + ' kN', px, beamY - 55);
+            } else if (currentCase === 'offset') {
+                const aClamp = Math.min(v.a, v.L);
+                const px = margin.left + (aClamp / v.L) * w;
+                drawArrow(ctx, px, beamY - 50, px, beamY - 5);
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText('P = ' + v.P + ' kN', px, beamY - 55);
+                // Show a dimension
+                ctx.strokeStyle = colors.textMuted;
+                ctx.fillStyle = colors.textMuted;
+                ctx.lineWidth = 1;
+                ctx.font = '11px sans-serif';
+                const adimY = beamY - 65;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, adimY); ctx.lineTo(px, adimY); ctx.stroke();
+                ctx.fillText('a = ' + aClamp.toFixed(1) + ' m', (margin.left + px) / 2, adimY - 5);
+            } else if (currentCase === 'distributed' || currentCase === 'cantileverQ') {
+                const numArrows = 12;
+                for (let i = 0; i <= numArrows; i++) {
+                    const x = margin.left + (i / numArrows) * w;
+                    drawArrow(ctx, x, beamY - 40, x, beamY - 5);
+                }
+                ctx.beginPath();
+                ctx.moveTo(margin.left, beamY - 40);
+                ctx.lineTo(margin.left + w, beamY - 40);
+                ctx.stroke();
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText('q = ' + v.q + ' kN/m', margin.left + w / 2, beamY - 45);
+            } else if (currentCase === 'cantileverP') {
+                const px = margin.left + w;
+                drawArrow(ctx, px, beamY - 50, px, beamY - 5);
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText('P = ' + v.P + ' kN', px, beamY - 55);
+            }
+
+            // Reactions
+            ctx.fillStyle = colors.reaction;
+            ctx.strokeStyle = colors.reaction;
+            ctx.lineWidth = 2;
+            ctx.font = '11px sans-serif';
+            if (!isCantilever) {
+                drawArrow(ctx, margin.left, beamY + 25, margin.left, beamY + 5);
+                ctx.fillText('R_A=' + r.RA.toFixed(1), margin.left, beamY + 38);
+                drawArrow(ctx, margin.left + w, beamY + 35, margin.left + w, beamY + 5);
+                ctx.fillText('R_B=' + r.RB.toFixed(1), margin.left + w, beamY + 48);
+            }
+        }
+
+        function drawArrow(ctx, x1, y1, x2, y2) {
+            const headLen = 8;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawDiagram(canvas, data, L, title, colorPos, colorNeg) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const margin = { left: 60, right: 40, top: 30, bottom: 25 };
+            const w = canvas.width - margin.left - margin.right;
+            const h = canvas.height - margin.top - margin.bottom;
+
+            const maxAbs = Math.max(...data.map(Math.abs), 0.001);
+            const scale = (h / 2) / maxAbs;
+            const zeroY = margin.top + h / 2;
+
+            // Title
+            ctx.fillStyle = colors.accent;
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(title, margin.left, 18);
+
+            // Grid
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = margin.top + (i / 4) * h;
+                ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + w, y); ctx.stroke();
+            }
+
+            // Zero axis
+            ctx.strokeStyle = colors.axis;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(margin.left, zeroY);
+            ctx.lineTo(margin.left + w, zeroY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Filled area
+            ctx.beginPath();
+            ctx.moveTo(margin.left, zeroY);
+            for (let i = 0; i < data.length; i++) {
+                const x = margin.left + (i / (data.length - 1)) * w;
+                const y = zeroY - data[i] * scale;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(margin.left + w, zeroY);
+            ctx.closePath();
+
+            const grad = ctx.createLinearGradient(0, margin.top, 0, margin.top + h);
+            grad.addColorStop(0, colorPos + '40');
+            grad.addColorStop(0.5, colorPos + '08');
+            grad.addColorStop(0.5, colorNeg + '08');
+            grad.addColorStop(1, colorNeg + '40');
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Line
+            ctx.strokeStyle = colorPos;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < data.length; i++) {
+                const x = margin.left + (i / (data.length - 1)) * w;
+                const y = zeroY - data[i] * scale;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Y-axis labels
+            ctx.fillStyle = colors.textMuted;
+            ctx.font = '11px monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText('+' + maxAbs.toFixed(1), margin.left - 5, margin.top + 12);
+            ctx.fillText('0', margin.left - 5, zeroY + 4);
+            ctx.fillText('-' + maxAbs.toFixed(1), margin.left - 5, margin.top + h);
+
+            // Max value indicator
+            let maxI = 0, maxVal = 0;
+            for (let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > Math.abs(maxVal)) { maxVal = data[i]; maxI = i; }
+            }
+            const mx = margin.left + (maxI / (data.length - 1)) * w;
+            const my = zeroY - maxVal * scale;
+            ctx.fillStyle = maxVal >= 0 ? colorPos : colorNeg;
+            ctx.beginPath();
+            ctx.arc(mx, my, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(maxVal.toFixed(2), mx, my - 10);
+        }
+
+        function resizeCanvases() {
+            const container = document.querySelector('.canvas-container');
+            if (!container) return;
+            const cw = container.clientWidth;
+            ['beamCanvas', 'shearCanvas', 'momentCanvas', 'deflectionCanvas'].forEach(id => {
+                document.getElementById(id).width = cw;
+            });
+            update();
+        }
+
+        const savedTheme = localStorage.getItem('beamCalcTheme') || 'serious';
+        setTheme(savedTheme);
+        updateVisibility();
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+    </script>
+</body>
+</html>
