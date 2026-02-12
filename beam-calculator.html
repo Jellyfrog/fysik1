@@ -42,19 +42,19 @@
     <div class="container">
         <a href="index.html" class="back-link" id="backLink">← Tillbaka</a>
         <div class="theme-selector">
-            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Seriös</button>
             <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
             <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
         </div>
-        <h1 id="main-title">Balkberaknare</h1>
-        <p class="subtitle">Interaktiv berakning av tvarkraft (V) och moment (M) diagram</p>
+        <h1 id="main-title">Balkberäknare</h1>
+        <p class="subtitle">Interaktiv beräkning av tvärkraft (V) och moment (M) diagram</p>
 
         <div class="main-content">
             <div class="controls">
                 <div class="example-note">
                     <strong>Teckenkonvention:</strong><br>
-                    Positiv V: uppat (vanster om snitt)<br>
-                    Positivt M: underdragen (balk bojer nedat)<br>
+                    Positiv V: uppåt (vänster om snitt)<br>
+                    Positivt M: underdragen (balk böjer nedåt)<br>
                     Lastkombination: 1,2*G + 1,5*Q
                 </div>
 
@@ -71,7 +71,7 @@
                 <div class="section-header"><h3>Parametrar</h3></div>
 
                 <div class="control-group">
-                    <label>Balklangd (L) <span class="unit">[m]</span></label>
+                    <label>Balklängd (L) <span class="unit">[m]</span></label>
                     <div class="input-group">
                         <input type="number" id="beamLength" min="1" max="20" step="0.5" value="6">
                         <span class="unit-label">m</span>
@@ -89,7 +89,7 @@
                 </div>
 
                 <div class="control-group" id="loadPositionGroup">
-                    <label>Lastposition (a) <span class="unit">[m fran A]</span></label>
+                    <label>Lastposition (a) <span class="unit">[m från A]</span></label>
                     <div class="input-group">
                         <input type="number" id="loadPosition" min="0" max="20" step="0.1" value="3">
                         <span class="unit-label">m</span>
@@ -142,31 +142,31 @@
                 </div>
 
                 <div class="rules-box" id="conceptsBox">
-                    <h4>Vad ar krafterna?</h4>
-                    <p><strong>Tvarkraft V (skjuvkraft)</strong> — Den inre kraft som verkar vinkelratt mot balkens langdaxel. Tankt dig att du klipper balken med en sax — tvarkraften ar den kraft som forsaker skjuva de tva delarna fran varandra vertikalt. Vid stod och punktlaster gor V ett "hopp".</p>
-                    <p style="margin-top:8px;"><strong>Moment M (bojmoment)</strong> — Det inre momentet som forsaker boja balken. Positivt moment gor att balken bojer nedat (underdragen = dragning i underkant). Momentet ar storst dar tvarkraften byter tecken (gar genom noll).</p>
-                    <p style="margin-top:8px;"><strong>Normalkraft N</strong> — Kraft langs balkens langdaxel (tryck eller drag). For enkla balkar med vertikala laster ar N = 0.</p>
-                    <p style="margin-top:8px;"><strong>Nedböjning v</strong> — Hur mycket balken bojer sig. Maximal nedbojning uppstar oftast i mitten. Beror pa styvheten EI — ju hogre EI, desto mindre nedbojning.</p>
-                    <p style="margin-top:8px;"><strong>Stodreaktioner R<sub>A</sub> och R<sub>B</sub></strong> — Krafterna som stoden utover pa balken for att halla den i jamvikt. Bestams med jamviktsekvationerna ΣF=0 och ΣM=0.</p>
+                    <h4>Vad är krafterna?</h4>
+                    <p><strong>Tvärkraft V (skjuvkraft)</strong> — Den inre kraft som verkar vinkelrätt mot balkens längdaxel. Tänk dig att du klipper balken med en sax — tvärkraften är den kraft som försöker skjuva de två delarna från varandra vertikalt. Vid stöd och punktlaster gör V ett "hopp".</p>
+                    <p style="margin-top:8px;"><strong>Moment M (böjmoment)</strong> — Det inre momentet som försöker böja balken. Positivt moment gör att balken böjer nedåt (underdragen = dragning i underkant). Momentet är störst där tvärkraften byter tecken (går genom noll).</p>
+                    <p style="margin-top:8px;"><strong>Normalkraft N</strong> — Kraft längs balkens längdaxel (tryck eller drag). För enkla balkar med vertikala laster är N = 0.</p>
+                    <p style="margin-top:8px;"><strong>Nedböjning v</strong> — Hur mycket balken böjer sig. Maximal nedböjning uppstår oftast i mitten. Beror på styvheten EI — ju högre EI, desto mindre nedböjning.</p>
+                    <p style="margin-top:8px;"><strong>Stödreaktioner R<sub>A</sub> och R<sub>B</sub></strong> — Krafterna som stöden utövar på balken för att hålla den i jämvikt. Bestäms med jämviktsekvationerna ΣF=0 och ΣM=0.</p>
                 </div>
 
                 <div class="rules-box" id="rulesBox" style="margin-top:10px;">
-                    <h4>5 regler for N, V, M diagram</h4>
+                    <h4>5 regler för N, V, M diagram</h4>
                     <ol>
-                        <li><strong>M far max varde nar V byter tecken</strong> — Momentet ar som storst precis dar tvarkraften gar fran negativt till positivt (eller tvartom), dvs dar V korsar nolllinjen.</li>
-                        <li><strong>Mellan 2 punktkrafter ar V konstant och M linjart</strong> — Nar ingen utbredd last verkar forblir V oforandrad, medan M okar eller minskar linjart.</li>
-                        <li><strong>Med utbredd last ar V linjar och M parabolisk</strong> — En linjelast gor att V andras linjart och M foljer en parabelformad kurva.</li>
-                        <li><strong>M ar noll vid fria balkandar</strong> — Balkandar med enkelstod eller rullstod kan inte ta emot moment, sa M = 0 dar.</li>
-                        <li><strong>Vid punkt- och stodkrafter gor V ett hopp</strong> — Hoppets storlek ar lika med kraftens varde. Detta galler aven for stodreaktioner.</li>
+                        <li><strong>M får max värde när V byter tecken</strong> — Momentet är som störst precis där tvärkraften går från negativt till positivt (eller tvärtom), dvs där V korsar nolllinjen.</li>
+                        <li><strong>Mellan 2 punktkrafter är V konstant och M linjärt</strong> — När ingen utbredd last verkar förblir V oförändrad, medan M ökar eller minskar linjärt.</li>
+                        <li><strong>Med utbredd last är V linjär och M parabolisk</strong> — En linjelast gör att V ändras linjärt och M följer en parabelformad kurva.</li>
+                        <li><strong>M är noll vid fria balkändar</strong> — Balkändar med enkelstöd eller rullstöd kan inte ta emot moment, så M = 0 där.</li>
+                        <li><strong>Vid punkt- och stödkrafter gör V ett hopp</strong> — Hoppets storlek är lika med kraftens värde. Detta gäller även för stödreaktioner.</li>
                     </ol>
                 </div>
 
                 <div class="rules-box" id="loadComboBox" style="margin-top:10px;">
-                    <h4>Lastkombination (brottgranstillstandet)</h4>
+                    <h4>Lastkombination (brottgränstillståndet)</h4>
                     <p><strong>1,2 · G + 1,5 · Q</strong></p>
                     <p style="margin-top:6px;"><strong>G</strong> = permanent last (egentyngd av konstruktionen)</p>
-                    <p><strong>Q</strong> = variabel last (snolast, nyttig last, vindlast)</p>
-                    <p style="margin-top:6px;">Faktorerna 1,2 och 1,5 ar partialkoefficienter som ger sakerhetsmarginal. Permanenta laster har lagre faktor eftersom de ar mer forut sagbara.</p>
+                    <p><strong>Q</strong> = variabel last (snölast, nyttig last, vindlast)</p>
+                    <p style="margin-top:6px;">Faktorerna 1,2 och 1,5 är partialkoefficienter som ger säkerhetsmarginal. Permanenta laster har lägre faktor eftersom de är mer förutsägbara.</p>
                 </div>
             </div>
 
@@ -184,7 +184,7 @@
     <script>
         const themes = {
             serious: {
-                name: 'Serios',
+                name: 'Seriös',
                 favicon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>📐</text></svg>",
                 decorations: [],
                 colors: {
@@ -565,7 +565,7 @@
 
         function drawAll(v, r) {
             drawBeam(v, r);
-            drawDiagram(document.getElementById('shearCanvas'), r.Vdata, v.L, 'Tvarkraftdiagram V(x) [kN]', colors.shearPos, colors.shearNeg);
+            drawDiagram(document.getElementById('shearCanvas'), r.Vdata, v.L, 'Tvärkraftdiagram V(x) [kN]', colors.shearPos, colors.shearNeg);
             drawDiagram(document.getElementById('momentCanvas'), r.Mdata, v.L, 'Momentdiagram M(x) [kNm]', colors.momentPos, colors.momentNeg);
             drawDiagram(document.getElementById('deflectionCanvas'), r.vData, v.L, 'Nedböjning v(x) [mm]', colors.deflection, colors.deflection);
         }

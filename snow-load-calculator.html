@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snolastberaknare - SS-EN 1991-1-3</title>
+    <title>Snölastberäknare - SS-EN 1991-1-3</title>
     <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>❄️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
     <style id="theme-styles"></style>
@@ -44,19 +44,19 @@
     <div class="container">
         <a href="index.html" class="back-link" id="backLink">← Tillbaka</a>
         <div class="theme-selector">
-            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Seriös</button>
             <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
             <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
         </div>
-        <h1 id="main-title">Snolastberaknare</h1>
-        <p class="subtitle">Berakna snolast pa tak enligt SS-EN 1991-1-3</p>
+        <h1 id="main-title">Snölastberäknare</h1>
+        <p class="subtitle">Beräkna snölast på tak enligt SS-EN 1991-1-3</p>
 
         <div class="main-content">
             <div class="controls">
                 <div class="example-note">
                     <strong>Formel:</strong> s = μ<sub>i</sub> · C<sub>e</sub> · C<sub>t</sub> · s<sub>k</sub><br>
-                    s<sub>k</sub> = karakteristiskt varde for snolast pa mark<br>
-                    μ<sub>i</sub> = formfaktor (beror pa takvinkel och taktyp)<br>
+                    s<sub>k</sub> = karakteristiskt värde för snölast på mark<br>
+                    μ<sub>i</sub> = formfaktor (beror på takvinkel och taktyp)<br>
                     C<sub>t</sub> = termisk koefficient (normalt 1,0)<br>
                     C<sub>e</sub> = exponeringsfaktor
                 </div>
@@ -80,7 +80,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Snolast pa mark (s<sub>k</sub>) <span class="unit">[kN/m²]</span></label>
+                    <label>Snölast på mark (s<sub>k</sub>) <span class="unit">[kN/m²]</span></label>
                     <div class="input-group">
                         <input type="number" id="snowGround" min="0.5" max="6" step="0.1" value="2.5">
                         <span class="unit-label">kN/m²</span>
@@ -106,7 +106,7 @@
                 </div>
 
                 <div class="control-group" id="roofLengthGroup">
-                    <label>Taklangd <span class="unit">[m]</span></label>
+                    <label>Taklängd <span class="unit">[m]</span></label>
                     <div class="input-group">
                         <input type="number" id="roofLength" min="2" max="30" step="0.5" value="8">
                         <span class="unit-label">m</span>
@@ -133,7 +133,7 @@
                         <span class="result-value" id="ctDisplay">1.000</span>
                     </div>
                     <div class="result-row total-row">
-                        <span class="result-label">s (snolast pa tak):</span>
+                        <span class="result-label">s (snölast på tak):</span>
                         <span class="result-value total" id="snowResult">2.000 kN/m²</span>
                     </div>
 
@@ -153,7 +153,7 @@
     <script>
         const themes = {
             serious: {
-                name: 'Serios', decorations: [],
+                name: 'Seriös', decorations: [],
                 colors: {
                     roof: '#8d6e63', snow: '#bbdefb', snowDark: '#64b5f6', ground: '#795548',
                     text: '#e0e0e0', textMuted: '#9e9e9e', accent: '#4fc3f7', accentDark: '#0288d1',
@@ -393,8 +393,8 @@
                 const s2 = mu2 * v.ce * v.ct * v.sk;
                 document.getElementById('snowResult').textContent = s1.toFixed(3) + ' / ' + s2.toFixed(3) + ' kN/m²';
                 document.getElementById('formulaBox').innerHTML =
-                    `Fall 1 (jamnt): s = μ<sub>1</sub> · C<sub>e</sub> · C<sub>t</sub> · s<sub>k</sub> = ${mu1.toFixed(3)} · ${v.ce.toFixed(1)} · ${v.ct.toFixed(1)} · ${v.sk.toFixed(1)} = <span class="highlight">${s1.toFixed(3)} kN/m²</span><br>` +
-                    `Fall 2 (snoficka): μ<sub>2</sub> · s<sub>k</sub> = ${mu2.toFixed(3)} · ${v.sk.toFixed(1)} = <span class="highlight">${s2.toFixed(3)} kN/m²</span>`;
+                    `Fall 1 (jämnt): s = μ<sub>1</sub> · C<sub>e</sub> · C<sub>t</sub> · s<sub>k</sub> = ${mu1.toFixed(3)} · ${v.ce.toFixed(1)} · ${v.ct.toFixed(1)} · ${v.sk.toFixed(1)} = <span class="highlight">${s1.toFixed(3)} kN/m²</span><br>` +
+                    `Fall 2 (snöficka): μ<sub>2</sub> · s<sub>k</sub> = ${mu2.toFixed(3)} · ${v.sk.toFixed(1)} = <span class="highlight">${s2.toFixed(3)} kN/m²</span>`;
             }
 
             drawRoof(v, mu1, mu2);

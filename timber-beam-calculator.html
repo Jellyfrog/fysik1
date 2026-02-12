@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trabalksberaknare - Dimensionering</title>
+    <title>Träbalksberäknare - Dimensionering</title>
     <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🪵</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
     <style id="theme-styles"></style>
@@ -47,24 +47,24 @@
     <div class="container">
         <a href="index.html" class="back-link" id="backLink">← Tillbaka</a>
         <div class="theme-selector">
-            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Serios</button>
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Seriös</button>
             <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
             <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
         </div>
-        <h1 id="main-title">Trabalksberaknare</h1>
-        <p class="subtitle">Steg-for-steg dimensionering av fritt upplagd trabalk</p>
+        <h1 id="main-title">Träbalksberäknare</h1>
+        <p class="subtitle">Steg-för-steg dimensionering av fritt upplagd träbalk</p>
 
         <div class="main-content">
             <div class="controls">
                 <div class="example-note">
-                    <strong>Arbetsgang enligt formelsamlingen:</strong><br>
-                    1. Bestam k<sub>mod</sub> → 2. Bestam γ<sub>m</sub> → 3. Bestam k<sub>h</sub><br>
-                    4. Rakna f<sub>m,d</sub> och f<sub>v,d</sub> → 5. Kontrollera M → 6. Kontrollera V
+                    <strong>Arbetsgång enligt formelsamlingen:</strong><br>
+                    1. Bestäm k<sub>mod</sub> → 2. Bestäm γ<sub>m</sub> → 3. Bestäm k<sub>h</sub><br>
+                    4. Räkna f<sub>m,d</sub> och f<sub>v,d</sub> → 5. Kontrollera M → 6. Kontrollera V
                 </div>
 
                 <div class="section-header"><h3>Material</h3></div>
                 <div class="control-group">
-                    <label>Hallfasthetsklass</label>
+                    <label>Hållfasthetsklass</label>
                     <div class="input-group">
                         <select id="timberClass">
                             <option value="C14">C14</option>
@@ -104,8 +104,8 @@
                     <div class="input-group">
                         <select id="loadDuration">
                             <option value="P">P (Permanent)</option>
-                            <option value="L">L (Langtid)</option>
-                            <option value="M" selected>M (Medeltid, t.ex. sno)</option>
+                            <option value="L">L (Långtid)</option>
+                            <option value="M" selected>M (Medeltid, t.ex. snö)</option>
                             <option value="S">S (Korttid)</option>
                             <option value="I">I (Momentan)</option>
                         </select>
@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="section-divider"></div>
-                <div class="section-header"><h3>Tvarsnitt</h3></div>
+                <div class="section-header"><h3>Tvärsnitt</h3></div>
 
                 <div class="control-group">
                     <label>Bredd (b) <span class="unit">[mm]</span></label>
@@ -125,7 +125,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Hojd (h) <span class="unit">[mm]</span></label>
+                    <label>Höjd (h) <span class="unit">[mm]</span></label>
                     <div class="input-group">
                         <input type="number" id="beamHeight" min="50" max="600" step="5" value="220">
                         <span class="unit-label">mm</span>
@@ -146,7 +146,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>V<sub>Ed</sub> (dimensionerande tvarkraft) <span class="unit">[kN]</span></label>
+                    <label>V<sub>Ed</sub> (dimensionerande tvärkraft) <span class="unit">[kN]</span></label>
                     <div class="input-group">
                         <input type="number" id="vEd" min="0" max="200" step="0.5" value="12">
                         <span class="unit-label">kN</span>
@@ -155,7 +155,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Exponerad for nederbord/sol?</label>
+                    <label>Exponerad för nederbörd/sol?</label>
                     <div class="input-group">
                         <select id="exposed">
                             <option value="no" selected>Nej</option>
@@ -209,7 +209,7 @@
 
         const themes = {
             serious: {
-                name: 'Serios', decorations: [],
+                name: 'Seriös', decorations: [],
                 colors: { accent: '#4fc3f7', text: '#e0e0e0', textMuted: '#9e9e9e', total: '#81c784', canvasBg: '#0d1421',
                     wood: '#8d6e63', woodLight: '#a1887f', woodDark: '#6d4c41', ok: '#66bb6a', fail: '#ef5350',
                     stepBg: 'rgba(79,195,247,0.08)', stepBorder: 'rgba(79,195,247,0.2)', stepNum: '#4fc3f7',
@@ -439,7 +439,7 @@
             // Title
             ctx.fillStyle = colors.accent;
             ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('Tvarsnitt ' + b + 'x' + h + ' mm', canvas.width / 2, 18);
+            ctx.fillText('Tvärsnitt ' + b + 'x' + h + ' mm', canvas.width / 2, 18);
         }
 
         function renderSteps(d) {
@@ -449,22 +449,22 @@
 
             container.innerHTML = `
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
-                    <div class="step-header"><div class="step-number">1</div><div class="step-title">Bestam k<sub>mod</sub></div></div>
-                    <div>Material: <strong>${d.cls}</strong> (${d.type === 'C' ? 'Konstruktionsvirke' : 'Limtra'})</div>
+                    <div class="step-header"><div class="step-number">1</div><div class="step-title">Bestäm k<sub>mod</sub></div></div>
+                    <div>Material: <strong>${d.cls}</strong> (${d.type === 'C' ? 'Konstruktionsvirke' : 'Limträ'})</div>
                     <div>Klimatklass: <strong>${d.climate}</strong>, Lastvaraktighet: <strong>${d.duration}</strong></div>
                     <div style="margin-top:6px;font-size:1.1em;"><strong>k<sub>mod</sub> = ${d.kmod.toFixed(2)}</strong></div>
                 </div>
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
-                    <div class="step-header"><div class="step-number">2</div><div class="step-title">Bestam γ<sub>m</sub></div></div>
-                    <div>${d.type === 'C' ? 'Konstruktionsvirke' : 'Limtra'}: <strong>γ<sub>m</sub> = ${d.gm}</strong></div>
+                    <div class="step-header"><div class="step-number">2</div><div class="step-title">Bestäm γ<sub>m</sub></div></div>
+                    <div>${d.type === 'C' ? 'Konstruktionsvirke' : 'Limträ'}: <strong>γ<sub>m</sub> = ${d.gm}</strong></div>
                 </div>
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
-                    <div class="step-header"><div class="step-number">3</div><div class="step-title">Bestam k<sub>h</sub> (storlekseffekt)</div></div>
+                    <div class="step-header"><div class="step-number">3</div><div class="step-title">Bestäm k<sub>h</sub> (storlekseffekt)</div></div>
                     <div>h = ${d.h} mm ${d.type === 'C' ? (d.h < 150 ? '< 150 mm → k_h = min((150/h)^0.2, 1.3)' : '≥ 150 mm → k_h = 1.0') : (d.h <= 231 ? '≤ 231 mm → k_h = 1.1' : d.h < 600 ? '< 600 mm → k_h = (600/h)^0.1' : '≥ 600 mm → k_h = 1.0')}</div>
                     <div style="margin-top:6px;font-size:1.1em;"><strong>k<sub>h</sub> = ${d.kh.toFixed(3)}</strong></div>
                 </div>
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
-                    <div class="step-header"><div class="step-number">4</div><div class="step-title">Rakna f<sub>m,d</sub> och f<sub>v,d</sub></div></div>
+                    <div class="step-header"><div class="step-number">4</div><div class="step-title">Räkna f<sub>m,d</sub> och f<sub>v,d</sub></div></div>
                     <div>f<sub>m,d</sub> = (k<sub>mod</sub> · f<sub>mk</sub> / γ<sub>m</sub>) · k<sub>h</sub> = (${d.kmod.toFixed(2)} · ${d.td.fmk} / ${d.gm}) · ${d.kh.toFixed(3)}</div>
                     <div style="font-size:1.1em;"><strong>f<sub>m,d</sub> = ${d.fmd.toFixed(2)} MPa</strong></div>
                     <div style="margin-top:6px;">f<sub>v,d</sub> = k<sub>mod</sub> · f<sub>vk</sub> / γ<sub>m</sub> = ${d.kmod.toFixed(2)} · ${d.td.fvk} / ${d.gm}</div>
@@ -482,7 +482,7 @@
                     </div>
                 </div>
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
-                    <div class="step-header"><div class="step-number">6</div><div class="step-title">Kontrollera tvarkraft</div></div>
+                    <div class="step-header"><div class="step-number">6</div><div class="step-title">Kontrollera tvärkraft</div></div>
                     <div>k<sub>cr</sub> = ${d.kcr.toFixed(2)}, b<sub>eff</sub> = b·k<sub>cr</sub> = ${d.b}·${d.kcr.toFixed(2)} = <strong>${d.beff.toFixed(1)} mm</strong></div>
                     <div>A<sub>eff</sub> = b<sub>eff</sub>·h = ${d.beff.toFixed(1)}·${d.h} = <strong>${d.Aeff.toFixed(0)} mm²</strong></div>
                     <div>V<sub>Rd</sub> = A<sub>eff</sub>·f<sub>v,d</sub> / 1.5 = <strong>${d.VRd.toFixed(2)} kN</strong></div>
