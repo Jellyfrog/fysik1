@@ -59,7 +59,7 @@
                 <div class="example-note">
                     <strong>Arbetsgång enligt formelsamlingen:</strong><br>
                     1. Bestäm k<sub>mod</sub> → 2. Bestäm γ<sub>m</sub> → 3. Bestäm k<sub>h</sub><br>
-                    4. Räkna f<sub>m,d</sub> och f<sub>v,d</sub> → 5. Kontrollera M → 6. Kontrollera V
+                    4. Räkna f<sub>m,d</sub>, f<sub>v,d</sub> och f<sub>c,0,d</sub> → 5. Kontrollera M → 6. Kontrollera V → 7. Kontrollera N
                 </div>
 
                 <div class="section-header"><h3>Material</h3></div>
@@ -151,6 +151,15 @@
                         <input type="number" id="vEd" min="0" max="200" step="0.5" value="12">
                         <span class="unit-label">kN</span>
                         <input type="range" id="vEdSlider" min="0" max="200" step="0.5" value="12">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>N<sub>Ed</sub> (dimensionerande normalkraft) <span class="unit">[kN]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="nEd" min="0" max="500" step="0.5" value="0">
+                        <span class="unit-label">kN</span>
+                        <input type="range" id="nEdSlider" min="0" max="500" step="0.5" value="0">
                     </div>
                 </div>
 
@@ -330,7 +339,7 @@
 
         const sliderPairs = [
             ['beamWidth', 'beamWidthSlider'], ['beamHeight', 'beamHeightSlider'],
-            ['mEd', 'mEdSlider'], ['vEd', 'vEdSlider']
+            ['mEd', 'mEdSlider'], ['vEd', 'vEdSlider'], ['nEd', 'nEdSlider']
         ];
         sliderPairs.forEach(([numId, sliderId]) => {
             const num = document.getElementById(numId);
@@ -361,6 +370,7 @@
             const h = parseFloat(document.getElementById('beamHeight').value);
             const mEd = parseFloat(document.getElementById('mEd').value);
             const vEd = parseFloat(document.getElementById('vEd').value);
+            const nEd = parseFloat(document.getElementById('nEd').value);
             const exposed = document.getElementById('exposed').value;
 
             const td = timberData[cls];
@@ -372,6 +382,7 @@
             // Step 4: Design strengths
             const fmd = (kmod * td.fmk / gm) * kh;
             const fvd = kmod * td.fvk / gm;
+            const fc0d = kmod * td.fc0k / gm;
 
             // Step 5: Moment capacity
             const W = b * h * h / 6; // mm³
@@ -384,11 +395,16 @@
             const Aeff = beff * h;
             const VRd = Aeff * fvd / 1.5 / 1000; // kN
 
+            // Step 7: Normal force capacity
+            const A = b * h; // mm²
+            const NRd = fc0d * A / 1000; // kN (fc0d in MPa = N/mm², A in mm² → N → /1000 = kN)
+
             const momentUtil = (mEd / MRd) * 100;
             const shearUtil = (vEd / VRd) * 100;
+            const normalUtil = NRd > 0 ? (nEd / NRd) * 100 : 0;
 
             drawCrossSection(b, h);
-            renderSteps({ cls, type, climate, duration, kmod, gm, kh, fmd, fvd, b, h, W, MRd, VRd, mEd, vEd, momentUtil, shearUtil, kcr, beff, Aeff, td });
+            renderSteps({ cls, type, climate, duration, kmod, gm, kh, fmd, fvd, fc0d, b, h, W, MRd, VRd, NRd, A, mEd, vEd, nEd, momentUtil, shearUtil, normalUtil, kcr, beff, Aeff, td });
         }
 
         function drawCrossSection(b, h) {
@@ -469,6 +485,8 @@
                     <div style="font-size:1.1em;"><strong>f<sub>m,d</sub> = ${d.fmd.toFixed(2)} MPa</strong></div>
                     <div style="margin-top:6px;">f<sub>v,d</sub> = k<sub>mod</sub> · f<sub>vk</sub> / γ<sub>m</sub> = ${d.kmod.toFixed(2)} · ${d.td.fvk} / ${d.gm}</div>
                     <div style="font-size:1.1em;"><strong>f<sub>v,d</sub> = ${d.fvd.toFixed(2)} MPa</strong></div>
+                    <div style="margin-top:6px;">f<sub>c,0,d</sub> = k<sub>mod</sub> · f<sub>c,0,k</sub> / γ<sub>m</sub> = ${d.kmod.toFixed(2)} · ${d.td.fc0k} / ${d.gm}</div>
+                    <div style="font-size:1.1em;"><strong>f<sub>c,0,d</sub> = ${d.fc0d.toFixed(2)} MPa</strong></div>
                 </div>
                 <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
                     <div class="step-header"><div class="step-number">5</div><div class="step-title">Kontrollera moment</div></div>
@@ -491,6 +509,17 @@
                     <div class="utilization-bar" style="background:${colors.barBg};">
                         <div class="utilization-fill" style="width:${Math.min(d.shearUtil, 100)}%; background:${d.shearUtil <= 100 ? colors.barOk : colors.barFail};"></div>
                         <span class="utilization-text" style="color:${colors.text};">${d.shearUtil.toFixed(1)}%</span>
+                    </div>
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">7</div><div class="step-title">Kontrollera normalkraft (tryck)</div></div>
+                    <div>A = b·h = ${d.b}·${d.h} = <strong>${d.A.toFixed(0)} mm²</strong></div>
+                    <div>N<sub>Rd</sub> = f<sub>c,0,d</sub> · A = ${d.fc0d.toFixed(2)} · ${d.A.toFixed(0)} / 1000 = <strong>${d.NRd.toFixed(2)} kN</strong></div>
+                    <div style="margin-top:8px;">N<sub>Ed</sub> / N<sub>Rd</sub> = ${d.nEd.toFixed(1)} / ${d.NRd.toFixed(2)} = <strong>${d.normalUtil.toFixed(1)}%</strong>
+                    <span class="status-badge ${d.normalUtil <= 100 ? 'status-ok' : 'status-fail'}">${d.normalUtil <= 100 ? 'OK' : 'EJ OK'}</span></div>
+                    <div class="utilization-bar" style="background:${colors.barBg};">
+                        <div class="utilization-fill" style="width:${Math.min(d.normalUtil, 100)}%; background:${d.normalUtil <= 100 ? colors.barOk : colors.barFail};"></div>
+                        <span class="utilization-text" style="color:${colors.text};">${d.normalUtil.toFixed(1)}%</span>
                     </div>
                 </div>
             `;
