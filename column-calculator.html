@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pelarknäckning - Normalkraftkapacitet</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🏛️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Pacifico&family=Inter:wght@400;500;600&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style id="theme-styles"></style>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; padding: 20px; transition: background 0.5s ease, color 0.5s ease; overflow-x: hidden; }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+        .back-link { display: inline-block; margin-bottom: 15px; text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .theme-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .theme-btn { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+        .main-content { display: grid; grid-template-columns: 420px 1fr; gap: 30px; }
+        @media (max-width: 950px) { .main-content { grid-template-columns: 1fr; } }
+        .control-group { margin-bottom: 16px; }
+        .control-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95em; }
+        .input-group { display: flex; align-items: center; gap: 10px; }
+        .input-group input[type="number"] { width: 80px; padding: 8px; font-size: 1em; text-align: right; font-weight: 600; }
+        .input-group .unit-label { font-size: 0.85em; min-width: 40px; }
+        .input-group select { padding: 8px; font-size: 0.95em; border-radius: 8px; font-weight: 600; }
+        input[type="range"] { flex: 1; height: 10px; border-radius: 10px; outline: none; -webkit-appearance: none; }
+        canvas { border-radius: 20px; width: 100%; }
+        .result-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95em; }
+        .section-divider { height: 2px; margin: 16px 0; }
+        .step-container { margin-bottom: 15px; padding: 15px; border-radius: 12px; }
+        .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .step-number { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9em; flex-shrink: 0; }
+        .step-title { font-weight: 700; font-size: 1em; }
+        .utilization-bar { height: 24px; border-radius: 12px; margin: 8px 0; overflow: hidden; position: relative; }
+        .utilization-fill { height: 100%; border-radius: 12px; transition: width 0.5s ease; }
+        .utilization-text { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; font-size: 0.85em; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85em; }
+        .status-ok { background: rgba(102,187,106,0.2); color: #66bb6a; }
+        .status-fail { background: rgba(239,83,80,0.2); color: #ef5350; }
+        .preset-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .preset-btn { padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85em; transition: all 0.3s; font-weight: 600; }
+        .custom-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; font-size: 0.9em; }
+        .custom-toggle input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .custom-fields { overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+        .custom-fields.hidden { max-height: 0; opacity: 0; pointer-events: none; }
+        .custom-fields.visible { max-height: 500px; opacity: 1; }
+        .material-fields { overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+        .material-fields.hidden { max-height: 0; opacity: 0; pointer-events: none; }
+        .material-fields.visible { max-height: 500px; opacity: 1; }
+        .decoration { position: fixed; pointer-events: none; animation: float 3s ease-in-out infinite; z-index: 0; }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 1; } }
+        @keyframes catBounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
+        .cat-decoration { animation: catBounce 2s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link" id="backLink">&larr; Tillbaka</a>
+        <div class="theme-selector">
+            <button class="theme-btn" data-theme="serious" onclick="setTheme('serious')"><span>📐</span> Seriös</button>
+            <button class="theme-btn" data-theme="princess" onclick="setTheme('princess')"><span>👑</span> Prinsessa</button>
+            <button class="theme-btn" data-theme="cats" onclick="setTheme('cats')"><span>🐱</span> Katter</button>
+        </div>
+        <h1 id="main-title">Pelarknäckning</h1>
+        <p class="subtitle">Normalkraftkapacitet med knäckningskontroll enligt Eulers knäckningsfall</p>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="example-note">
+                    <strong>Arbetsgång:</strong><br>
+                    1. Bestäm f<sub>c,0,d</sub> &rarr; 2. Beräkna A och i &rarr; 3. L<sub>eff</sub> = &beta; &middot; L<br>
+                    4. Slankhet &lambda; &rarr; 5. Bestäm k<sub>c</sub> &rarr; 6. N<sub>c,0,Rd</sub> = f<sub>c,0,d</sub> &middot; A &middot; k<sub>c</sub><br>
+                    7. Kontrollera utnyttjandegrad
+                </div>
+
+                <div class="section-header"><h3>Tryckhållfasthet</h3></div>
+
+                <label class="custom-toggle">
+                    <input type="checkbox" id="customMode"> Skriv egna värden (MPa)
+                </label>
+
+                <div class="material-fields visible" id="materialFields">
+                    <div class="control-group">
+                        <label>Hållfasthetsklass</label>
+                        <div class="input-group">
+                            <select id="timberClass">
+                                <option value="C14">C14</option>
+                                <option value="C16">C16</option>
+                                <option value="C18">C18</option>
+                                <option value="C20">C20</option>
+                                <option value="C22">C22</option>
+                                <option value="C24" selected>C24</option>
+                                <option value="C27">C27</option>
+                                <option value="C30">C30</option>
+                                <option value="C35">C35</option>
+                                <option value="C40">C40</option>
+                                <option value="GL24c">GL24c</option>
+                                <option value="GL28c">GL28c</option>
+                                <option value="GL32c">GL32c</option>
+                                <option value="GL24h">GL24h</option>
+                                <option value="GL28h">GL28h</option>
+                                <option value="GL30h">GL30h</option>
+                                <option value="GL32h">GL32h</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Klimatklass</label>
+                        <div class="input-group">
+                            <select id="climateClass">
+                                <option value="1" selected>1 (Inomhus, uppvarmt)</option>
+                                <option value="2">2 (Under tak, ouppvarmt)</option>
+                                <option value="3">3 (Utomhus)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Lastvaraktighetsklass</label>
+                        <div class="input-group">
+                            <select id="loadDuration">
+                                <option value="P">P (Permanent)</option>
+                                <option value="L">L (Långtid)</option>
+                                <option value="M" selected>M (Medeltid, t.ex. snö)</option>
+                                <option value="S">S (Korttid)</option>
+                                <option value="I">I (Momentan)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="custom-fields hidden" id="customFields">
+                    <div class="control-group">
+                        <label>f<sub>c,0,d</sub> (dim. tryckhållfasthet) <span class="unit">[MPa]</span></label>
+                        <div class="input-group">
+                            <input type="number" id="customFc0d" min="0.1" max="50" step="0.1" value="12.92">
+                            <span class="unit-label">MPa</span>
+                            <input type="range" id="customFc0dSlider" min="0.1" max="50" step="0.1" value="12.92">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>f<sub>c,0,k</sub> (karakteristisk tryckhållfasthet) <span class="unit">[MPa]</span></label>
+                        <div class="input-group">
+                            <input type="number" id="customFc0k" min="1" max="60" step="0.5" value="21">
+                            <span class="unit-label">MPa</span>
+                            <input type="range" id="customFc0kSlider" min="1" max="60" step="0.5" value="21">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>E<sub>0,05</sub> (5%-fraktil E-modul) <span class="unit">[MPa]</span></label>
+                        <div class="input-group">
+                            <input type="number" id="customE005" min="100" max="20000" step="100" value="7400">
+                            <span class="unit-label">MPa</span>
+                            <input type="range" id="customE005Slider" min="100" max="20000" step="100" value="7400">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Pelardimensioner</h3></div>
+
+                <div class="control-group">
+                    <label>Bredd b <span class="unit">[mm]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="colWidth" min="20" max="500" step="5" value="45">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="colWidthSlider" min="20" max="500" step="5" value="45">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Höjd h <span class="unit">[mm]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="colHeight" min="20" max="500" step="5" value="95">
+                        <span class="unit-label">mm</span>
+                        <input type="range" id="colHeightSlider" min="20" max="500" step="5" value="95">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Pelarlängd L <span class="unit">[m]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="colLength" min="0.1" max="15" step="0.1" value="3.0">
+                        <span class="unit-label">m</span>
+                        <input type="range" id="colLengthSlider" min="0.1" max="15" step="0.1" value="3.0">
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Eulers knäckfall (&beta;)</h3></div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" id="euler1" onclick="setEuler(1.0, this)">Ledad-Ledad (&beta;=1,0)</button>
+                    <button class="preset-btn" id="euler2" onclick="setEuler(2.0, this)">Fast-Fri (&beta;=2,0)</button>
+                    <button class="preset-btn" id="euler3" onclick="setEuler(0.7, this)">Fast-Ledad (&beta;=0,7)</button>
+                    <button class="preset-btn" id="euler4" onclick="setEuler(0.5, this)">Fast-Fast (&beta;=0,5)</button>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Knäckriktning</h3></div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" id="dirWeak" onclick="setDirection('weak', this)">Veka (i = b/&radic;12)</button>
+                    <button class="preset-btn" id="dirStrong" onclick="setDirection('strong', this)">Styva (i = h/&radic;12)</button>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="section-header"><h3>Last</h3></div>
+
+                <div class="control-group">
+                    <label>N<sub>Ed</sub> (dimensionerande normalkraft) <span class="unit">[kN]</span></label>
+                    <div class="input-group">
+                        <input type="number" id="nEd" min="0" max="2000" step="0.5" value="52">
+                        <span class="unit-label">kN</span>
+                        <input type="range" id="nEdSlider" min="0" max="2000" step="0.5" value="52">
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <canvas id="columnCanvas" width="800" height="350"></canvas>
+                <div id="stepsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const timberData = {
+            C14:  { fmk: 14, fvk: 3, E005: 4700, fc0k: 16, type: 'C' },
+            C16:  { fmk: 16, fvk: 3.2, E005: 5400, fc0k: 17, type: 'C' },
+            C18:  { fmk: 18, fvk: 3.4, E005: 6000, fc0k: 18, type: 'C' },
+            C20:  { fmk: 20, fvk: 3.6, E005: 6400, fc0k: 19, type: 'C' },
+            C22:  { fmk: 22, fvk: 3.8, E005: 6700, fc0k: 20, type: 'C' },
+            C24:  { fmk: 24, fvk: 4, E005: 7400, fc0k: 21, type: 'C' },
+            C27:  { fmk: 27, fvk: 4, E005: 7700, fc0k: 22, type: 'C' },
+            C30:  { fmk: 30, fvk: 4, E005: 8000, fc0k: 24, type: 'C' },
+            C35:  { fmk: 35, fvk: 4, E005: 8700, fc0k: 25, type: 'C' },
+            C40:  { fmk: 40, fvk: 4, E005: 9400, fc0k: 27, type: 'C' },
+            GL24c: { fmk: 24, fvk: 3.5, E005: 9100, fc0k: 21.5, type: 'GL' },
+            GL28c: { fmk: 28, fvk: 3.5, E005: 10400, fc0k: 24, type: 'GL' },
+            GL32c: { fmk: 32, fvk: 3.5, E005: 11200, fc0k: 24.5, type: 'GL' },
+            GL24h: { fmk: 24, fvk: 3.5, E005: 9600, fc0k: 24, type: 'GL' },
+            GL28h: { fmk: 28, fvk: 3.5, E005: 10500, fc0k: 28, type: 'GL' },
+            GL30h: { fmk: 30, fvk: 3.5, E005: 11300, fc0k: 30, type: 'GL' },
+            GL32h: { fmk: 32, fvk: 3.5, E005: 11800, fc0k: 32, type: 'GL' }
+        };
+
+        const kmodTable = {
+            C: { 1: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                 2: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                 3: { P: 0.5, L: 0.55, M: 0.65, S: 0.7, I: 0.9 } },
+            GL: { 1: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                  2: { P: 0.6, L: 0.7, M: 0.8, S: 0.9, I: 1.1 },
+                  3: { P: 0.5, L: 0.55, M: 0.65, S: 0.7, I: 0.9 } }
+        };
+
+        const gammaM = { C: 1.3, GL: 1.25 };
+
+        let currentBeta = 1.0;
+        let currentDirection = 'weak';
+
+        const themes = {
+            serious: {
+                name: 'Seriös', decorations: [],
+                colors: { accent: '#4fc3f7', text: '#e0e0e0', textMuted: '#9e9e9e', total: '#81c784', canvasBg: '#0d1421',
+                    wood: '#8d6e63', woodLight: '#a1887f', woodDark: '#6d4c41', ok: '#66bb6a', fail: '#ef5350',
+                    stepBg: 'rgba(79,195,247,0.08)', stepBorder: 'rgba(79,195,247,0.2)', stepNum: '#4fc3f7',
+                    barBg: 'rgba(255,255,255,0.1)', barOk: '#66bb6a', barFail: '#ef5350',
+                    presetBg: 'rgba(255,255,255,0.08)', presetBorder: 'rgba(255,255,255,0.2)', presetActive: 'rgba(79,195,247,0.3)', presetActiveBorder: '#4fc3f7' },
+                css: `
+                    body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #4fc3f7; font-weight: 600; font-size: 2em; }
+                    .subtitle { text-align: center; color: #9e9e9e; margin-bottom: 30px; }
+                    .back-link { color: #4fc3f7; }
+                    .theme-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
+                    .theme-btn:hover, .theme-btn.active { background: rgba(79,195,247,0.2); border-color: #4fc3f7; color: #4fc3f7; }
+                    .controls, .visualization { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
+                    .control-group label { color: #4fc3f7; } .unit, .unit-label { color: #888; }
+                    input[type="range"] { background: #333; }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4fc3f7; cursor: pointer; }
+                    .input-group input[type="number"] { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; }
+                    .input-group select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'Inter', sans-serif; }
+                    .results h3, .section-header h3 { color: #4fc3f7; margin-bottom: 12px; border-bottom: 1px solid rgba(79,195,247,0.3); padding-bottom: 8px; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, rgba(79,195,247,0.3) 50%, transparent 100%); }
+                    .example-note { background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.85em; color: #4fc3f7; }
+                    .example-note strong { color: #81c784; }
+                    canvas { background: #0d1421; border: 1px solid rgba(255,255,255,0.1); }
+                    .step-container { background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2); }
+                    .step-number { background: rgba(79,195,247,0.3); color: #4fc3f7; }
+                    .step-title { color: #4fc3f7; }
+                    .utilization-bar { background: rgba(255,255,255,0.1); }
+                    .preset-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ccc; }
+                    .preset-btn:hover { background: rgba(79,195,247,0.15); border-color: rgba(79,195,247,0.5); }
+                    .preset-btn.active { background: rgba(79,195,247,0.3); border-color: #4fc3f7; color: #4fc3f7; }
+                    .custom-toggle { color: #9e9e9e; }
+                `
+            },
+            princess: {
+                name: 'Prinsessa', decorations: ['✨', '💖', '⭐', '🌸', '💕'],
+                colors: { accent: '#d4699e', text: '#5a4a6a', textMuted: '#9b7aa9', total: '#9b59b6', canvasBg: '#fff5fa',
+                    wood: '#c48a9f', woodLight: '#dda0b8', woodDark: '#a87088', ok: '#ab47bc', fail: '#e91e8c',
+                    stepBg: 'rgba(212,105,158,0.08)', stepBorder: '#f5c6e0', stepNum: '#d4699e',
+                    barBg: 'rgba(212,105,158,0.1)', barOk: '#ab47bc', barFail: '#e91e8c',
+                    presetBg: '#fff', presetBorder: '#f5c6e0', presetActive: 'linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%)', presetActiveBorder: '#d46a9e' },
+                css: `
+                    body { font-family: 'Quicksand', sans-serif; background: linear-gradient(135deg, #ffeef8 0%, #e8d5f9 100%); color: #5a4a6a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #d4699e; font-family: 'Pacifico', cursive; font-size: 2.5em; }
+                    .subtitle { text-align: center; color: #9b7aa9; margin-bottom: 30px; }
+                    .back-link { color: #d4699e; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff5fa 100%); border: 2px solid #f5c6e0; color: #b87a9e; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,240,250,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #f5c6e0; }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,240,255,0.9) 100%); border-radius: 25px; padding: 25px; border: 3px solid #e0c6f5; }
+                    .control-group label { color: #c46a9e; } .unit, .unit-label { color: #b89ac4; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd6eb 0%, #e8c6f5 100%); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); cursor: pointer; border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: #fff; border: 2px solid #f5c6e0; border-radius: 15px; color: #8b6a9e; font-family: 'Quicksand', sans-serif; }
+                    .input-group select { background: #fff; border: 2px solid #f5c6e0; border-radius: 15px; color: #8b6a9e; font-family: 'Quicksand', sans-serif; }
+                    .results h3, .section-header h3 { color: #c46a9e; margin-bottom: 12px; border-bottom: 2px dashed #f5c6e0; padding-bottom: 8px; font-family: 'Pacifico', cursive; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #f5c6e0 50%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff0f7 0%, #ffe8f5 100%); border: 2px dashed #f5a8c8; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #b87a9e; }
+                    .example-note strong { color: #d46a9e; }
+                    canvas { background: linear-gradient(180deg, #fff5fa 0%, #f8f0ff 100%); border: 2px solid #f0d6eb; }
+                    .step-container { background: rgba(212,105,158,0.08); border: 2px solid #f5c6e0; }
+                    .step-number { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); color: #fff; }
+                    .step-title { color: #c46a9e; font-family: 'Pacifico', cursive; }
+                    .utilization-bar { background: rgba(212,105,158,0.1); }
+                    .preset-btn { background: #fff; border: 2px solid #f5c6e0; color: #b87a9e; }
+                    .preset-btn:hover { background: #fff0f7; border-color: #d46a9e; }
+                    .preset-btn.active { background: linear-gradient(145deg, #ff9ecb 0%, #d46a9e 100%); border-color: #d46a9e; color: #fff; }
+                    .custom-toggle { color: #9b7aa9; }
+                `
+            },
+            cats: {
+                name: 'Katter', decorations: ['🐱', '🐾', '🐟', '🧶', '😺'],
+                colors: { accent: '#ff7744', text: '#4a4a4a', textMuted: '#777', total: '#66bb6a', canvasBg: '#fffaf5',
+                    wood: '#ff9966', woodLight: '#ffb088', woodDark: '#e07840', ok: '#66bb6a', fail: '#e53935',
+                    stepBg: 'rgba(255,120,70,0.06)', stepBorder: '#ffd4b8', stepNum: '#ff7744',
+                    barBg: 'rgba(255,120,70,0.1)', barOk: '#66bb6a', barFail: '#e53935',
+                    presetBg: '#fff', presetBorder: '#ffd4b8', presetActive: 'linear-gradient(145deg, #ffb088 0%, #ff7744 100%)', presetActiveBorder: '#ff7744' },
+                css: `
+                    body { font-family: 'Comic Neue', cursive; background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%); color: #4a4a4a; }
+                    h1 { text-align: center; margin-bottom: 10px; color: #ff7744; font-size: 2.3em; font-weight: 700; }
+                    h1::before { content: '😺 '; } h1::after { content: ' 😺'; }
+                    .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+                    .back-link { color: #ff7744; }
+                    .theme-btn { background: linear-gradient(145deg, #fff 0%, #fff8f0 100%); border: 2px solid #ffd4b8; color: #ff9966; }
+                    .theme-btn:hover, .theme-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; }
+                    .controls { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #ffd4b8; }
+                    .visualization { background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,255,248,0.95) 100%); border-radius: 25px; padding: 25px; border: 3px solid #b8e0d2; }
+                    .control-group label { color: #ff7744; font-weight: 700; } .unit, .unit-label { color: #aaa; }
+                    input[type="range"] { background: linear-gradient(90deg, #ffd4b8 0%, #b8e0d2 100%); }
+                    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); cursor: pointer; border: 3px solid #fff; }
+                    .input-group input[type="number"] { background: #fff; border: 2px solid #ffd4b8; border-radius: 15px; color: #666; font-family: 'Comic Neue', cursive; }
+                    .input-group select { background: #fff; border: 2px solid #ffd4b8; border-radius: 15px; color: #666; font-family: 'Comic Neue', cursive; }
+                    .results h3, .section-header h3 { color: #ff7744; margin-bottom: 12px; border-bottom: 3px dotted #ffd4b8; padding-bottom: 8px; }
+                    .section-divider { background: linear-gradient(90deg, transparent 0%, #ffd4b8 30%, #b8e0d2 70%, transparent 100%); }
+                    .example-note { background: linear-gradient(145deg, #fff8f0 0%, #fffaf5 100%); border: 3px dotted #ffb088; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 0.85em; color: #888; }
+                    .example-note strong { color: #ff7744; }
+                    canvas { background: linear-gradient(180deg, #fffaf5 0%, #f5fff8 100%); border: 3px solid #ffd4b8; }
+                    .step-container { background: rgba(255,120,70,0.06); border: 3px dotted #ffd4b8; }
+                    .step-number { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); color: #fff; }
+                    .step-title { color: #ff7744; }
+                    .utilization-bar { background: rgba(255,120,70,0.1); }
+                    .preset-btn { background: #fff; border: 2px solid #ffd4b8; color: #ff9966; }
+                    .preset-btn:hover { background: #fff8f0; border-color: #ff7744; }
+                    .preset-btn.active { background: linear-gradient(145deg, #ffb088 0%, #ff7744 100%); border-color: #ff7744; color: #fff; }
+                    .custom-toggle { color: #888; }
+                    .decoration { animation-name: catBounce; }
+                `
+            }
+        };
+
+        let currentTheme = 'serious';
+        let colors = themes.serious.colors;
+
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            colors = themes[themeName].colors;
+            document.getElementById('theme-styles').textContent = themes[themeName].css;
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === themeName));
+            document.querySelectorAll('.decoration').forEach(el => el.remove());
+            if (themes[themeName].decorations.length > 0) {
+                for (let i = 0; i < 10; i++) {
+                    const dec = document.createElement('div');
+                    dec.className = 'decoration';
+                    if (themeName === 'cats') dec.classList.add('cat-decoration');
+                    dec.textContent = themes[themeName].decorations[Math.floor(Math.random() * themes[themeName].decorations.length)];
+                    dec.style.left = Math.random() * 100 + 'vw'; dec.style.top = Math.random() * 100 + 'vh';
+                    dec.style.animationDelay = Math.random() * 3 + 's'; dec.style.fontSize = (Math.random() * 15 + 12) + 'px';
+                    document.body.appendChild(dec);
+                }
+            }
+            localStorage.setItem('columnCalcTheme', themeName);
+            update();
+        }
+
+        // Euler case buttons
+        function setEuler(beta, btn) {
+            currentBeta = beta;
+            document.querySelectorAll('.preset-buttons .preset-btn').forEach(b => {
+                if (b.id.startsWith('euler')) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            update();
+        }
+
+        // Buckling direction buttons
+        function setDirection(dir, btn) {
+            currentDirection = dir;
+            document.querySelectorAll('.preset-buttons .preset-btn').forEach(b => {
+                if (b.id.startsWith('dir')) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            update();
+        }
+
+        // Custom mode toggle
+        document.getElementById('customMode').addEventListener('change', function() {
+            const materialFields = document.getElementById('materialFields');
+            const customFields = document.getElementById('customFields');
+            if (this.checked) {
+                materialFields.classList.remove('visible');
+                materialFields.classList.add('hidden');
+                customFields.classList.remove('hidden');
+                customFields.classList.add('visible');
+            } else {
+                materialFields.classList.remove('hidden');
+                materialFields.classList.add('visible');
+                customFields.classList.remove('visible');
+                customFields.classList.add('hidden');
+            }
+            update();
+        });
+
+        // Slider pairs
+        const sliderPairs = [
+            ['colWidth', 'colWidthSlider'], ['colHeight', 'colHeightSlider'],
+            ['colLength', 'colLengthSlider'], ['nEd', 'nEdSlider'],
+            ['customFc0d', 'customFc0dSlider'], ['customFc0k', 'customFc0kSlider'],
+            ['customE005', 'customE005Slider']
+        ];
+        sliderPairs.forEach(([numId, sliderId]) => {
+            const num = document.getElementById(numId);
+            const slider = document.getElementById(sliderId);
+            num.addEventListener('input', () => { slider.value = num.value; update(); });
+            slider.addEventListener('input', () => { num.value = slider.value; update(); });
+        });
+        ['timberClass', 'climateClass', 'loadDuration'].forEach(id => {
+            document.getElementById(id).addEventListener('change', update);
+        });
+
+        function update() {
+            const isCustom = document.getElementById('customMode').checked;
+            let fc0d, fc0k, E005, kmod, gm, cls, type, climate, duration;
+
+            if (isCustom) {
+                fc0d = parseFloat(document.getElementById('customFc0d').value);
+                fc0k = parseFloat(document.getElementById('customFc0k').value);
+                E005 = parseFloat(document.getElementById('customE005').value);
+                kmod = null;
+                gm = null;
+                cls = 'Egna värden';
+                type = fc0k > 24 ? 'GL' : 'C';
+                climate = '-';
+                duration = '-';
+            } else {
+                cls = document.getElementById('timberClass').value;
+                climate = document.getElementById('climateClass').value;
+                duration = document.getElementById('loadDuration').value;
+                const td = timberData[cls];
+                type = td.type;
+                kmod = kmodTable[type][climate][duration];
+                gm = gammaM[type];
+                fc0k = td.fc0k;
+                E005 = td.E005;
+                fc0d = kmod * fc0k / gm;
+            }
+
+            const b = parseFloat(document.getElementById('colWidth').value);
+            const h = parseFloat(document.getElementById('colHeight').value);
+            const L = parseFloat(document.getElementById('colLength').value);
+            const nEd = parseFloat(document.getElementById('nEd').value);
+            const beta = currentBeta;
+
+            // Area
+            const A = b * h; // mm²
+
+            // Radius of gyration
+            const iDim = currentDirection === 'weak' ? b : h;
+            const i = iDim / Math.sqrt(12); // mm
+            const dirLabel = currentDirection === 'weak' ? 'b' : 'h';
+
+            // Effective length
+            const Leff = beta * L; // m
+            const Leff_mm = Leff * 1000; // mm
+
+            // Slenderness
+            const lambda = Leff_mm / i;
+
+            // Beta1 for instability factor
+            const beta1 = type === 'GL' ? 0.1 : 0.2;
+
+            // Determine kc
+            let kc, lambda_rel, kInst;
+            if (lambda < 27) {
+                kc = 1.0;
+                lambda_rel = (lambda / Math.PI) * Math.sqrt(fc0k / E005);
+                kInst = null;
+            } else {
+                lambda_rel = (lambda / Math.PI) * Math.sqrt(fc0k / E005);
+                if (lambda_rel <= 0.3) {
+                    kc = 1.0;
+                    kInst = null;
+                } else {
+                    kInst = 0.5 * (1 + beta1 * (lambda_rel - 0.3) + lambda_rel * lambda_rel);
+                    kc = 1 / (kInst + Math.sqrt(kInst * kInst - lambda_rel * lambda_rel));
+                }
+            }
+
+            // Capacity
+            const NcRd = fc0d * A * kc / 1000; // kN
+
+            // Utilization
+            const util = NcRd > 0 ? (nEd / NcRd) * 100 : 999;
+
+            drawColumn(b, h, L, beta);
+            renderSteps({
+                isCustom, cls, type, climate, duration, kmod, gm, fc0k, E005, fc0d,
+                b, h, L, A, iDim, i, dirLabel, beta, Leff, Leff_mm,
+                lambda, beta1, lambda_rel, kInst, kc, NcRd, nEd, util
+            });
+        }
+
+        function drawColumn(b, h, L, beta) {
+            const canvas = document.getElementById('columnCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- Left: Column elevation view ---
+            const elevMargin = { top: 50, bottom: 60, left: 80, right: 40 };
+            const elevW = canvas.width * 0.45;
+            const maxDrawH = canvas.height - elevMargin.top - elevMargin.bottom;
+            const maxDrawW = 80;
+            const colScale = Math.min(maxDrawH / (L * 1000), maxDrawW / Math.max(b, h));
+            const drawH = Math.min(maxDrawH, maxDrawH * 0.85);
+            const drawW = Math.max(20, Math.min(maxDrawW, b * colScale * 0.3));
+            const cx = elevMargin.left + (elevW - elevMargin.left - elevMargin.right) / 2;
+            const colTop = elevMargin.top;
+            const colBot = colTop + drawH;
+
+            // Column body
+            const grad = ctx.createLinearGradient(cx - drawW/2, colTop, cx + drawW/2, colTop);
+            grad.addColorStop(0, colors.woodLight);
+            grad.addColorStop(0.5, colors.wood);
+            grad.addColorStop(1, colors.woodDark);
+            ctx.fillStyle = grad;
+            ctx.fillRect(cx - drawW/2, colTop, drawW, drawH);
+
+            // Grain lines
+            ctx.strokeStyle = colors.woodDark + '50';
+            ctx.lineWidth = 0.5;
+            for (let gx = cx - drawW/2 + 4; gx < cx + drawW/2; gx += 6) {
+                ctx.beginPath(); ctx.moveTo(gx, colTop + 2); ctx.lineTo(gx, colBot - 2); ctx.stroke();
+            }
+
+            // Column outline
+            ctx.strokeStyle = colors.accent;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cx - drawW/2, colTop, drawW, drawH);
+
+            // Buckling curve (dashed)
+            ctx.strokeStyle = colors.fail + '80';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            const buckleAmp = drawW * 0.6;
+            for (let py = 0; py <= 1; py += 0.01) {
+                const yy = colTop + py * drawH;
+                const xx = cx + buckleAmp * Math.sin(py * Math.PI);
+                if (py === 0) ctx.moveTo(xx, yy);
+                else ctx.lineTo(xx, yy);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Load arrow P
+            ctx.fillStyle = colors.accent;
+            ctx.strokeStyle = colors.accent;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, colTop - 35);
+            ctx.lineTo(cx, colTop - 5);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx, colTop - 2);
+            ctx.lineTo(cx - 7, colTop - 12);
+            ctx.lineTo(cx + 7, colTop - 12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('P', cx, colTop - 40);
+
+            // Length label L
+            ctx.fillStyle = colors.accent;
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'right';
+            const arrX = cx - drawW/2 - 20;
+            ctx.beginPath();
+            ctx.moveTo(arrX, colTop);
+            ctx.lineTo(arrX, colBot);
+            ctx.strokeStyle = colors.accent + '80';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // Arrow heads
+            ctx.beginPath(); ctx.moveTo(arrX-4, colTop+6); ctx.lineTo(arrX, colTop); ctx.lineTo(arrX+4, colTop+6); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(arrX-4, colBot-6); ctx.lineTo(arrX, colBot); ctx.lineTo(arrX+4, colBot-6); ctx.stroke();
+            ctx.save();
+            ctx.translate(arrX - 8, (colTop + colBot) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = colors.accent;
+            ctx.font = '13px sans-serif';
+            ctx.fillText('L = ' + L.toFixed(1) + ' m', 0, 0);
+            ctx.restore();
+
+            // Support symbols based on beta
+            drawSupports(ctx, cx, colTop, colBot, drawW, beta);
+
+            // --- Right: Cross section ---
+            const csX = elevW + 60;
+            const csMaxW = canvas.width - csX - 40;
+            const csMaxH = canvas.height - 80;
+            const csScale = Math.min(csMaxW / b, csMaxH / h, 2.5);
+            const csDW = b * csScale;
+            const csDH = h * csScale;
+            const csCX = csX + (canvas.width - csX - 20) / 2 - csDW/2;
+            const csCY = (canvas.height - csDH) / 2;
+
+            // Title
+            ctx.fillStyle = colors.accent;
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Tvärsnitt', csX + (canvas.width - csX - 20) / 2, csCY - 15);
+
+            // Cross section fill
+            const csGrad = ctx.createLinearGradient(csCX, csCY, csCX + csDW, csCY);
+            csGrad.addColorStop(0, colors.woodLight);
+            csGrad.addColorStop(0.5, colors.wood);
+            csGrad.addColorStop(1, colors.woodDark);
+            ctx.fillStyle = csGrad;
+            ctx.fillRect(csCX, csCY, csDW, csDH);
+
+            // Grain
+            ctx.strokeStyle = colors.woodDark + '40';
+            ctx.lineWidth = 0.5;
+            for (let gx = csCX + 3; gx < csCX + csDW; gx += 5) {
+                ctx.beginPath(); ctx.moveTo(gx, csCY + 2); ctx.lineTo(gx, csCY + csDH - 2); ctx.stroke();
+            }
+
+            ctx.strokeStyle = colors.accent;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(csCX, csCY, csDW, csDH);
+
+            // Dimension labels
+            ctx.fillStyle = colors.accent;
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(b + ' mm (b)', csCX + csDW/2, csCY + csDH + 18);
+            ctx.save();
+            ctx.translate(csCX - 12, csCY + csDH/2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(h + ' mm (h)', 0, 0);
+            ctx.restore();
+
+            // Axes z and y
+            ctx.strokeStyle = colors.textMuted + '80';
+            ctx.lineWidth = 1;
+            const axCx = csCX + csDW/2;
+            const axCy = csCY + csDH/2;
+            // y-axis (horizontal)
+            ctx.beginPath(); ctx.moveTo(csCX - 10, axCy); ctx.lineTo(csCX + csDW + 20, axCy); ctx.stroke();
+            ctx.fillStyle = colors.textMuted;
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('y', csCX + csDW + 24, axCy + 4);
+            // z-axis (vertical)
+            ctx.beginPath(); ctx.moveTo(axCx, csCY - 10); ctx.lineTo(axCx, csCY + csDH + 30); ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.fillText('z', axCx, csCY + csDH + 42);
+        }
+
+        function drawSupports(ctx, cx, colTop, colBot, drawW, beta) {
+            ctx.strokeStyle = colors.accent;
+            ctx.fillStyle = colors.accent;
+            ctx.lineWidth = 1.5;
+            const sw = drawW + 20;
+
+            if (beta === 1.0) {
+                // Pinned top, pinned bottom
+                drawPin(ctx, cx, colTop, sw, true);
+                drawPin(ctx, cx, colBot, sw, false);
+            } else if (beta === 2.0) {
+                // Fixed bottom, free top
+                drawFixed(ctx, cx, colBot, sw, false);
+                // Free top - no support, just the arrow
+            } else if (beta === 0.7) {
+                // Fixed bottom, pinned top
+                drawFixed(ctx, cx, colBot, sw, false);
+                drawPin(ctx, cx, colTop, sw, true);
+            } else if (beta === 0.5) {
+                // Fixed top, fixed bottom
+                drawFixed(ctx, cx, colTop, sw, true);
+                drawFixed(ctx, cx, colBot, sw, false);
+            }
+        }
+
+        function drawPin(ctx, x, y, w, isTop) {
+            const dir = isTop ? -1 : 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 10, y + dir * 15);
+            ctx.lineTo(x + 10, y + dir * 15);
+            ctx.closePath();
+            ctx.stroke();
+            // Ground line
+            ctx.beginPath();
+            ctx.moveTo(x - 15, y + dir * 15);
+            ctx.lineTo(x + 15, y + dir * 15);
+            ctx.stroke();
+        }
+
+        function drawFixed(ctx, x, y, w, isTop) {
+            const dir = isTop ? -1 : 1;
+            // Wall/ground
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y);
+            ctx.lineTo(x + 20, y);
+            ctx.stroke();
+            // Hatching
+            ctx.lineWidth = 1;
+            for (let hx = x - 18; hx <= x + 18; hx += 6) {
+                ctx.beginPath();
+                ctx.moveTo(hx, y);
+                ctx.lineTo(hx - 5, y + dir * 8);
+                ctx.stroke();
+            }
+        }
+
+        function renderSteps(d) {
+            const container = document.getElementById('stepsContainer');
+
+            // Step 1: Material properties
+            let step1Content;
+            if (d.isCustom) {
+                step1Content = `
+                    <div>Egna värden:</div>
+                    <div>f<sub>c,0,d</sub> = <strong>${d.fc0d.toFixed(2)} MPa</strong></div>
+                    <div>f<sub>c,0,k</sub> = <strong>${d.fc0k.toFixed(1)} MPa</strong></div>
+                    <div>E<sub>0,05</sub> = <strong>${d.E005.toFixed(0)} MPa</strong></div>
+                `;
+            } else {
+                step1Content = `
+                    <div>Material: <strong>${d.cls}</strong> (${d.type === 'C' ? 'Konstruktionsvirke' : 'Limträ'})</div>
+                    <div>Klimatklass: <strong>${d.climate}</strong>, Lastvaraktighet: <strong>${d.duration}</strong></div>
+                    <div style="margin-top:6px;">k<sub>mod</sub> = <strong>${d.kmod.toFixed(2)}</strong>, γ<sub>m</sub> = <strong>${d.gm}</strong></div>
+                    <div>f<sub>c,0,k</sub> = <strong>${d.fc0k} MPa</strong>, E<sub>0,05</sub> = <strong>${d.E005} MPa</strong></div>
+                `;
+            }
+
+            // Step 2: f_c0d
+            let step2Content;
+            if (d.isCustom) {
+                step2Content = `<div>f<sub>c,0,d</sub> = <strong>${d.fc0d.toFixed(2)} MPa</strong> (eget värde)</div>`;
+            } else {
+                step2Content = `
+                    <div>f<sub>c,0,d</sub> = k<sub>mod</sub> &middot; f<sub>c,0,k</sub> / γ<sub>m</sub> = ${d.kmod.toFixed(2)} &middot; ${d.fc0k} / ${d.gm}</div>
+                    <div style="font-size:1.1em;"><strong>f<sub>c,0,d</sub> = ${d.fc0d.toFixed(2)} MPa</strong></div>
+                `;
+            }
+
+            // Step 3: Area and radius of gyration
+            const step3Content = `
+                <div>A = b &middot; h = ${d.b} &middot; ${d.h} = <strong>${d.A.toFixed(0)} mm²</strong></div>
+                <div style="margin-top:6px;">Knäckriktning: <strong>${d.dirLabel === 'b' ? 'Veka (b)' : 'Styva (h)'}</strong></div>
+                <div>i = ${d.dirLabel} / √12 = ${d.iDim} / √12 = <strong>${d.i.toFixed(2)} mm</strong></div>
+            `;
+
+            // Step 4: Effective length and slenderness
+            const betaLabel = d.beta === 1.0 ? 'Ledad-Ledad' : d.beta === 2.0 ? 'Fast-Fri' : d.beta === 0.7 ? 'Fast-Ledad' : 'Fast-Fast';
+            const step4Content = `
+                <div>Knäckfall: <strong>${betaLabel}</strong>, β = ${d.beta.toFixed(1)}</div>
+                <div>L<sub>eff</sub> = β &middot; L = ${d.beta.toFixed(1)} &middot; ${d.L.toFixed(1)} = <strong>${d.Leff.toFixed(2)} m</strong> = ${d.Leff_mm.toFixed(0)} mm</div>
+                <div style="margin-top:6px;">λ = L<sub>eff</sub> / i = ${d.Leff_mm.toFixed(0)} / ${d.i.toFixed(2)} = <strong>${d.lambda.toFixed(1)}</strong></div>
+                <div style="margin-top:4px;">${d.lambda >= 27 ? '<span style="color:' + colors.fail + ';">λ ≥ 27 → Risk för knäckning! Räkna ut k<sub>c</sub></span>' : '<span style="color:' + colors.ok + ';">λ < 27 → Ingen risk för knäckning, k<sub>c</sub> = 1,0</span>'}</div>
+            `;
+
+            // Step 5: kc calculation
+            let step5Content;
+            if (d.lambda < 27 && d.lambda_rel <= 0.3) {
+                step5Content = `
+                    <div>λ < 27 → <strong>k<sub>c</sub> = 1,0</strong></div>
+                    <div style="margin-top:4px;">λ<sub>rel</sub> = (λ/π) &middot; √(f<sub>c,0,k</sub>/E<sub>0,05</sub>) = (${d.lambda.toFixed(1)}/π) &middot; √(${d.fc0k}/${d.E005}) = <strong>${d.lambda_rel.toFixed(3)}</strong></div>
+                `;
+            } else if (d.lambda_rel <= 0.3) {
+                step5Content = `
+                    <div>λ<sub>rel</sub> = (λ/π) &middot; √(f<sub>c,0,k</sub>/E<sub>0,05</sub>) = (${d.lambda.toFixed(1)}/π) &middot; √(${d.fc0k}/${d.E005}) = <strong>${d.lambda_rel.toFixed(3)}</strong></div>
+                    <div>λ<sub>rel</sub> ≤ 0,3 → <strong>k<sub>c</sub> = 1,0</strong></div>
+                `;
+            } else {
+                step5Content = `
+                    <div>λ<sub>rel</sub> = (λ/π) &middot; √(f<sub>c,0,k</sub>/E<sub>0,05</sub>) = (${d.lambda.toFixed(1)}/π) &middot; √(${d.fc0k}/${d.E005}) = <strong>${d.lambda_rel.toFixed(3)}</strong></div>
+                    <div style="margin-top:6px;">β<sub>1</sub> = ${d.beta1} (${d.type === 'GL' ? 'Limträ/LVL' : 'Konstruktionsvirke'})</div>
+                    <div>k = 0,5 &middot; (1 + β<sub>1</sub>(λ<sub>rel</sub> − 0,3) + λ<sub>rel</sub>²)</div>
+                    <div>k = 0,5 &middot; (1 + ${d.beta1} &middot; (${d.lambda_rel.toFixed(3)} − 0,3) + ${d.lambda_rel.toFixed(3)}²) = <strong>${d.kInst.toFixed(3)}</strong></div>
+                    <div style="margin-top:6px;">k<sub>c</sub> = 1 / (k + √(k² − λ<sub>rel</sub>²))</div>
+                    <div>k<sub>c</sub> = 1 / (${d.kInst.toFixed(3)} + √(${d.kInst.toFixed(3)}² − ${d.lambda_rel.toFixed(3)}²))</div>
+                    <div style="font-size:1.1em;"><strong>k<sub>c</sub> = ${d.kc.toFixed(3)}</strong></div>
+                `;
+            }
+
+            // Step 6: Capacity
+            const step6Content = `
+                <div>N<sub>c,0,Rd</sub> = f<sub>c,0,d</sub> &middot; A &middot; k<sub>c</sub></div>
+                <div>N<sub>c,0,Rd</sub> = ${d.fc0d.toFixed(2)} &middot; ${d.A.toFixed(0)} &middot; ${d.kc.toFixed(3)} / 1000</div>
+                <div style="font-size:1.2em; margin-top:6px;"><strong>N<sub>c,0,Rd</sub> = ${d.NcRd.toFixed(2)} kN</strong></div>
+            `;
+
+            // Step 7: Utilization
+            const step7Content = `
+                <div>N<sub>Ed</sub> / N<sub>c,0,Rd</sub> = ${d.nEd.toFixed(1)} / ${d.NcRd.toFixed(2)} = <strong>${d.util.toFixed(1)}%</strong>
+                <span class="status-badge ${d.util <= 100 ? 'status-ok' : 'status-fail'}">${d.util <= 100 ? 'OK' : 'EJ OK'}</span></div>
+                <div class="utilization-bar" style="background:${colors.barBg};">
+                    <div class="utilization-fill" style="width:${Math.min(d.util, 100)}%; background:${d.util <= 100 ? colors.barOk : colors.barFail};"></div>
+                    <span class="utilization-text" style="color:${colors.text};">${d.util.toFixed(1)}%</span>
+                </div>
+                <div style="margin-top:10px; padding:10px; border-radius:8px; background:${d.util <= 100 ? 'rgba(102,187,106,0.1)' : 'rgba(239,83,80,0.1)'}; border:1px solid ${d.util <= 100 ? colors.ok + '40' : colors.fail + '40'};">
+                    ${d.util <= 100
+                        ? `Pelaren klarar lasten <strong>${d.nEd.toFixed(1)} kN</strong>. Kapaciteten är <strong>${d.NcRd.toFixed(2)} kN</strong>.`
+                        : `Pelaren klarar <strong>INTE</strong> lasten <strong>${d.nEd.toFixed(1)} kN</strong>. Kapaciteten är bara <strong>${d.NcRd.toFixed(2)} kN</strong>. Öka dimensionerna eller välj starkare material.`
+                    }
+                </div>
+            `;
+
+            container.innerHTML = `
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">1</div><div class="step-title">Materialdata</div></div>
+                    ${step1Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">2</div><div class="step-title">Dimensionerande tryckhållfasthet f<sub>c,0,d</sub></div></div>
+                    ${step2Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">3</div><div class="step-title">Tvärsnittsarea och trögheitsradie</div></div>
+                    ${step3Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">4</div><div class="step-title">Effektiv knäcklängd och slankhet</div></div>
+                    ${step4Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">5</div><div class="step-title">Knäckningsfaktor k<sub>c</sub></div></div>
+                    ${step5Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">6</div><div class="step-title">Normalkraftkapacitet N<sub>c,0,Rd</sub></div></div>
+                    ${step6Content}
+                </div>
+                <div class="step-container" style="background:${colors.stepBg}; border:1px solid ${colors.stepBorder};">
+                    <div class="step-header"><div class="step-number">7</div><div class="step-title">Utnyttjandegrad</div></div>
+                    ${step7Content}
+                </div>
+            `;
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.visualization');
+            if (!container) return;
+            document.getElementById('columnCanvas').width = container.clientWidth - 50;
+            update();
+        }
+
+        // Initialize
+        document.getElementById('euler1').classList.add('active');
+        document.getElementById('dirWeak').classList.add('active');
+
+        const savedTheme = localStorage.getItem('columnCalcTheme') || 'serious';
+        setTheme(savedTheme);
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
