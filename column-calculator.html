@@ -485,15 +485,14 @@
 
             // Radius of gyration
             const iDim = currentDirection === 'weak' ? b : h;
-            const i = iDim / Math.sqrt(12); // mm
+            const i_m = (iDim / 1000) / Math.sqrt(12); // m
             const dirLabel = currentDirection === 'weak' ? 'b' : 'h';
 
             // Effective length
             const Leff = beta * L; // m
-            const Leff_mm = Leff * 1000; // mm
 
             // Slenderness
-            const lambda = Leff_mm / i;
+            const lambda = Leff / i_m;
 
             // Beta1 for instability factor
             const beta1 = type === 'GL' ? 0.1 : 0.2;
@@ -524,7 +523,7 @@
             drawColumn(b, h, L, beta);
             renderSteps({
                 isCustom, cls, type, climate, duration, kmod, gm, fc0k, E005, fc0d,
-                b, h, L, A, iDim, i, dirLabel, beta, Leff, Leff_mm,
+                b, h, L, A, iDim, i_m, dirLabel, beta, Leff,
                 lambda, beta1, lambda_rel, kInst, kc, NcRd, nEd, util
             });
         }
@@ -782,15 +781,15 @@
             const step3Content = `
                 <div>A = b &middot; h = ${d.b} &middot; ${d.h} = <strong>${d.A.toFixed(0)} mm²</strong></div>
                 <div style="margin-top:6px;">Knäckriktning: <strong>${d.dirLabel === 'b' ? 'Veka (b)' : 'Styva (h)'}</strong></div>
-                <div>i = ${d.dirLabel} / √12 = ${d.iDim} / √12 = <strong>${d.i.toFixed(2)} mm</strong></div>
+                <div>i = ${d.dirLabel} / √12 = ${(d.iDim / 1000).toFixed(3)} / √12 = <strong>${d.i_m.toFixed(5)} m</strong></div>
             `;
 
             // Step 4: Effective length and slenderness
             const betaLabel = d.beta === 1.0 ? 'Ledad-Ledad' : d.beta === 2.0 ? 'Fast-Fri' : d.beta === 0.7 ? 'Fast-Ledad' : 'Fast-Fast';
             const step4Content = `
                 <div>Knäckfall: <strong>${betaLabel}</strong>, β = ${d.beta.toFixed(1)}</div>
-                <div>L<sub>eff</sub> = β &middot; L = ${d.beta.toFixed(1)} &middot; ${d.L.toFixed(1)} = <strong>${d.Leff.toFixed(2)} m</strong> = ${d.Leff_mm.toFixed(0)} mm</div>
-                <div style="margin-top:6px;">λ = L<sub>eff</sub> / i = ${d.Leff_mm.toFixed(0)} / ${d.i.toFixed(2)} = <strong>${d.lambda.toFixed(1)}</strong></div>
+                <div>L<sub>eff</sub> = β &middot; L = ${d.beta.toFixed(1)} &middot; ${d.L.toFixed(1)} = <strong>${d.Leff.toFixed(2)} m</strong></div>
+                <div style="margin-top:6px;">λ = L<sub>eff</sub> / i = ${d.Leff.toFixed(2)} / ${d.i_m.toFixed(5)} = <strong>${d.lambda.toFixed(1)}</strong></div>
                 <div style="margin-top:4px;">${d.lambda >= 27 ? '<span style="color:' + colors.fail + ';">λ ≥ 27 → Risk för knäckning! Räkna ut k<sub>c</sub></span>' : '<span style="color:' + colors.ok + ';">λ < 27 → Ingen risk för knäckning, k<sub>c</sub> = 1,0</span>'}</div>
             `;
 
