@@ -481,7 +481,7 @@
             const beta = currentBeta;
 
             // Area
-            const A = b * h; // mm²
+            const A_m2 = (b / 1000) * (h / 1000); // m²
 
             // Radius of gyration
             const iDim = currentDirection === 'weak' ? b : h;
@@ -514,8 +514,8 @@
                 }
             }
 
-            // Capacity
-            const NcRd = fc0d * A * kc / 1000; // kN
+            // Capacity (MPa = MN/m², so fc0d · A_m2 · kc = MN, ×1000 = kN)
+            const NcRd = fc0d * A_m2 * kc * 1000; // kN
 
             // Utilization
             const util = NcRd > 0 ? (nEd / NcRd) * 100 : 999;
@@ -523,7 +523,7 @@
             drawColumn(b, h, L, beta);
             renderSteps({
                 isCustom, cls, type, climate, duration, kmod, gm, fc0k, E005, fc0d,
-                b, h, L, A, iDim, i_m, dirLabel, beta, Leff,
+                b, h, L, A_m2, iDim, i_m, dirLabel, beta, Leff,
                 lambda, beta1, lambda_rel, kInst, kc, NcRd, nEd, util
             });
         }
@@ -779,7 +779,7 @@
 
             // Step 3: Area and radius of gyration
             const step3Content = `
-                <div>A = b &middot; h = ${d.b} &middot; ${d.h} = <strong>${d.A.toFixed(0)} mm²</strong></div>
+                <div>A = b &middot; h = ${(d.b / 1000).toFixed(3)} &middot; ${(d.h / 1000).toFixed(3)} = <strong>${d.A_m2.toFixed(4)} m²</strong></div>
                 <div style="margin-top:6px;">Knäckriktning: <strong>${d.dirLabel === 'b' ? 'Veka (b)' : 'Styva (h)'}</strong></div>
                 <div>i = ${d.dirLabel} / √12 = ${(d.iDim / 1000).toFixed(3)} / √12 = <strong>${d.i_m.toFixed(5)} m</strong></div>
             `;
@@ -819,8 +819,8 @@
 
             // Step 6: Capacity
             const step6Content = `
-                <div>N<sub>c,0,Rd</sub> = f<sub>c,0,d</sub> &middot; A &middot; k<sub>c</sub></div>
-                <div>N<sub>c,0,Rd</sub> = ${d.fc0d.toFixed(2)} &middot; ${d.A.toFixed(0)} &middot; ${d.kc.toFixed(3)} / 1000</div>
+                <div>N<sub>c,0,Rd</sub> = f<sub>c,0,d</sub> &middot; A &middot; k<sub>c</sub> &middot; 1000</div>
+                <div>N<sub>c,0,Rd</sub> = ${d.fc0d.toFixed(2)} &middot; ${d.A_m2.toFixed(4)} &middot; ${d.kc.toFixed(3)} &middot; 1000</div>
                 <div style="font-size:1.2em; margin-top:6px;"><strong>N<sub>c,0,Rd</sub> = ${d.NcRd.toFixed(2)} kN</strong></div>
             `;
 
